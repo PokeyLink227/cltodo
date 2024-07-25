@@ -64,14 +64,22 @@ impl App {
     }
 
     fn render_bottom_bar(&self, area: Rect, buf: &mut Buffer) {
-        let horizontal = Layout::horizontal([
-            Constraint::Min(0),
-            Constraint::Length(3),
-        ]);
-        let [app_name, options_bar] = horizontal.areas(area);
+        let keys = [
+            ("q/Esc", "Quit"),
+            ("j", "Down"),
+            ("k", "Up"),
+        ];
 
-        Paragraph::new("asd").render(app_name, buf);
-        Paragraph::new("bbb").bg(Color::Gray).render(options_bar, buf);
+        let spans: Vec<Span> = keys
+            .iter()
+            .flat_map(|(key, desc)| {
+                let key = Span::from(format!(" {key} "));
+                let desc = Span::from(format!(" {desc} "));
+                [key, desc]
+            })
+            .collect();
+
+        Line::from(spans).centered().render(area, buf);
     }
 
 }
@@ -79,6 +87,6 @@ impl App {
 fn main() -> io::Result<()> {
     let mut terminal = tui::init()?;
     let mut app = App {should_exit: false};
-    app.run(&mut terminal);
+    app.run(&mut terminal)?;
     tui::restore()
 }
