@@ -32,6 +32,12 @@ enum Tab {
     Profile,
 }
 
+enum Dialogue {
+    None,
+    Save,
+    NewTask,
+}
+
 pub struct App {
     mode: RunningMode,
     current_tab: Tab,
@@ -120,6 +126,10 @@ impl App {
         Paragraph::new(" Profile ").style(if let Tab::Profile = self.current_tab {THEME.root_tab_selected} else {THEME.root}).render(profile_tab, buf);
     }
 
+    /*
+        need to only render useable controls for currently selected tab.
+        so render common followed by specific controls.
+    */
     fn render_bottom_bar(&self, area: Rect, buf: &mut Buffer) {
         let keys = [
             ("Q/Esc", "Quit"),
