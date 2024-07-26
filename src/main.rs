@@ -26,7 +26,7 @@ enum RunningMode {
 }
 
 enum Tab {
-    Main,
+    TaskList,
     Calender,
     Options,
     Profile,
@@ -42,7 +42,7 @@ pub struct App {
     mode: RunningMode,
     current_tab: Tab,
 
-    main_tab: MainTab,
+    task_list_tab: TaskListTab,
     calender_tab: CalenderTab,
     options_tab: OptionsTab,
     profile_tab: ProfileTab,
@@ -61,7 +61,7 @@ impl Widget for &App {
 
         self.render_title_bar(title_bar, buf);
         match self.current_tab {
-            Tab::Main => self.main_tab.render(canvas, buf),
+            Tab::TaskList => self.task_list_tab.render(canvas, buf),
             Tab::Calender => self.calender_tab.render(canvas, buf),
             Tab::Options => self.options_tab.render(canvas, buf),
             Tab::Profile => self.profile_tab.render(canvas, buf),
@@ -91,7 +91,7 @@ impl App {
                     match key.code {
                         KeyCode::Char('q') | KeyCode::Esc => self.mode = RunningMode::Exiting,
                         KeyCode::Tab => self.next_tab(),
-                        _ => {},
+                        _ => self.dispatch_input(key.code),
                     }
                 }
             }
@@ -99,12 +99,21 @@ impl App {
         Ok(())
     }
 
+    fn dispatch_input(&mut self, key: KeyCode) {
+        match self.current_tab {
+            Tab::TaskList => self.task_list_tab.handle_input(key),
+            Tab::Calender => self.calender_tab.handle_input(key),
+            Tab::Options => self.options_tab.handle_input(key),
+            Tab::Profile => self.profile_tab.handle_input(key),
+        }
+    }
+
     fn next_tab(&mut self) {
         self.current_tab = match self.current_tab {
-            Tab::Main => Tab::Calender,
+            Tab::TaskList => Tab::Calender,
             Tab::Calender => Tab::Options,
             Tab::Options => Tab::Profile,
-            Tab::Profile => Tab::Main,
+            Tab::Profile => Tab::TaskList,
         }
     }
 
@@ -120,7 +129,7 @@ impl App {
 
         Block::new().style(THEME.root).render(area, buf);
         Paragraph::new("CL-TODO").render(app_name, buf);
-        Paragraph::new(" Lists ").style(if let Tab::Main = self.current_tab {THEME.root_tab_selected} else {THEME.root}).render(list_tab, buf);
+        Paragraph::new(" Tasks ").style(if let Tab::TaskList = self.current_tab {THEME.root_tab_selected} else {THEME.root}).render(list_tab, buf);
         Paragraph::new(" Calender ").style(if let Tab::Calender = self.current_tab {THEME.root_tab_selected} else {THEME.root}).render(calender_tab, buf);
         Paragraph::new(" Options ").style(if let Tab::Options = self.current_tab {THEME.root_tab_selected} else {THEME.root}).render(options_tab, buf);
         Paragraph::new(" Profile ").style(if let Tab::Profile = self.current_tab {THEME.root_tab_selected} else {THEME.root}).render(profile_tab, buf);
@@ -154,7 +163,23 @@ impl App {
 
 fn main() -> io::Result<()> {
     let mut terminal = tui::init()?;
-    let mut app = App {mode: RunningMode::Running, current_tab: Tab::Main, main_tab: MainTab {}, calender_tab: CalenderTab {}, options_tab: OptionsTab {}, profile_tab: ProfileTab {}};
+    let mut app = App {
+        mode: RunningMode::Running,
+        current_tab: Tab::TaskList,
+        task_list_tab: TaskListTab {
+            selected_list_index: 0,
+            task_lists: vec![
+                TaskList {name: "Test1 Long tasklist name".to_string(), tasks: Vec::new()},
+                TaskList {name: "Test2".to_string(), tasks: vec![
+                    Task {name: "do work".to_string()},
+                    Task {name: "do some more work".to_string()},
+                ]},
+            ],
+        },
+        calender_tab: CalenderTab {},
+        options_tab: OptionsTab {},
+        profile_tab: ProfileTab {}
+    };
     app.run(&mut terminal)?;
     tui::restore()
 }
