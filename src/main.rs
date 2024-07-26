@@ -167,12 +167,14 @@ fn main() -> io::Result<()> {
         mode: RunningMode::Running,
         current_tab: Tab::TaskList,
         task_list_tab: TaskListTab {
-            selected_list_index: 0,
+            selected: 0,
             task_lists: vec![
-                TaskList {name: "Test1 Long tasklist name".to_string(), tasks: Vec::new()},
-                TaskList {name: "Test2".to_string(), tasks: vec![
-                    Task {name: "do work".to_string()},
-                    Task {name: "do some more work".to_string()},
+                TaskList {name: "Test1 Long tasklist name".to_string(), selected: 0, tasks: Vec::new()},
+                TaskList {name: "Test2".to_string(), selected: 0, tasks: vec![
+                    Task {name: "do work".to_string(), status: TaskStatus::NotStarted},
+                    Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
+                    Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
+                    Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
                 ]},
             ],
         },
