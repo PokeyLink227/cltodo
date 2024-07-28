@@ -1,6 +1,9 @@
 use ratatui::{prelude::*, widgets::*};
 use crossterm::event::{KeyCode};
-use crate::{THEME};
+use crate::{
+    theme::{THEME},
+    popup::{NewTaskPopup},
+};
 
 pub enum TaskStatus {
     NotStarted,
@@ -19,9 +22,33 @@ pub struct TaskList {
     pub tasks: Vec<Task>,
 }
 
+impl TaskList {
+    fn next_task(&mut self) {
+        if self.tasks.len() == 0 { return; }
+
+        if self.selected + 1 == self.tasks.len() {
+            self.selected = 0;
+        } else {
+            self.selected += 1;
+        }
+    }
+
+    fn previous_task(&mut self) {
+        if self.tasks.len() == 0 { return; }
+
+        if self.selected == 0 {
+            self.selected = self.tasks.len() - 1;
+        } else {
+            self.selected -= 1;
+        }
+    }
+}
+
 pub struct TaskListTab {
     pub selected: usize,
     pub task_lists: Vec<TaskList>,
+
+    pub new_task_window: Option<NewTaskPopup>,
 }
 
 impl TaskListTab {
@@ -29,13 +56,22 @@ impl TaskListTab {
         match key {
             KeyCode::Char('h') => self.previous_tab(),
             KeyCode::Char('l') => self.next_tab(),
-            KeyCode::Char('k') => self.previous_task(),
-            KeyCode::Char('j') => self.next_task(),
+            KeyCode::Char('k') => self.task_lists[self.selected].previous_task(),
+            KeyCode::Char('j') => self.task_lists[self.selected].next_task(),
+            KeyCode::Char('a') => self.new_task(),
             _ => {},
         }
     }
 
+    fn new_task(&mut self) {
+        self.new_task_window = Some(NewTaskPopup {
+        });
+        //self.task_lists[self.selected].tasks.push(Task {name: "test".to_string(), status: TaskStatus::NotStarted});
+    }
+
     fn next_tab(&mut self) {
+        if self.task_lists.len() == 0 { return; }
+
         if self.selected + 1 == self.task_lists.len() {
             self.selected = 0;
         } else {
@@ -44,38 +80,12 @@ impl TaskListTab {
     }
 
     fn previous_tab(&mut self) {
+        if self.task_lists.len() == 0 { return; }
+
         if self.selected == 0 {
-            self.selected = if self.task_lists.len() == 0 {
-                0
-            } else {
-                self.task_lists.len() - 1
-            };
+            self.selected = self.task_lists.len() - 1;
         } else {
             self.selected -= 1;
-        }
-    }
-
-    fn next_task(&mut self) {
-        if self.task_lists.len() == 0 { return; }
-
-        if self.task_lists[self.selected].selected + 1 == self.task_lists[self.selected].tasks.len() {
-            self.task_lists[self.selected].selected = 0;
-        } else {
-            self.task_lists[self.selected].selected += 1;
-        }
-    }
-
-    fn previous_task(&mut self) {
-        if self.task_lists.len() == 0 { return; }
-
-        if self.task_lists[self.selected].selected == 0 {
-            self.task_lists[self.selected].selected = if self.task_lists[self.selected].tasks.len() == 0 {
-                0
-            } else {
-                self.task_lists[self.selected].tasks.len() - 1
-            }
-        } else {
-            self.task_lists[self.selected].selected -= 1;
         }
     }
 }
@@ -122,6 +132,11 @@ impl Widget for &TaskListTab {
         let tasks_border = Block::bordered().border_style(THEME.task_border).border_type(BorderType::Thick);
         Text::from(lines).render(tasks_border.inner(tasks_area), buf);
         tasks_border.render(tasks_area, buf);
+
+        // Popup Rendering
+        if let Some(window) = &self.new_task_window {
+            window.render(area, buf);
+        }
     }
 }
 

@@ -14,11 +14,13 @@ use ratatui::{
 use crate::{
     tabs::*,
     theme::{THEME},
+    popup::*,
 };
 
 mod tui;
 mod theme;
 mod tabs;
+mod popup;
 
 enum RunningMode {
     Running,
@@ -177,6 +179,7 @@ fn main() -> io::Result<()> {
                     Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
                 ]},
             ],
+            new_task_window: None,
         },
         calender_tab: CalenderTab {},
         options_tab: OptionsTab {},
