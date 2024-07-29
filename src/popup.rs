@@ -4,26 +4,48 @@ use ratatui::{
     layout::Flex,
 };
 use crossterm::event::{KeyCode};
-use crate::theme::{THEME};
+use crate::{
+    theme::{THEME},
+    tabs::{TaskListTab, TaskList, Task, TaskStatus},
+};
+
+pub enum PopupStatus {
+    InUse,
+    Finished,
+    Closed,
+}
 
 pub struct NewTaskPopup {
+    pub status: PopupStatus,
+    pub text: String,
+}
 
+impl NewTaskPopup {
+    pub fn handle_input(&mut self, key: KeyCode) {
+        match key {
+            KeyCode::Char(c) => self.text.push(c),
+            KeyCode::Backspace => { self.text.pop(); },
+            KeyCode::Enter => self.status = PopupStatus::Finished,
+            _ => {},
+        }
+    }
 }
 
 impl Widget for &NewTaskPopup {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let vertical = Layout::vertical([5]).flex(Flex::Center);
         let [area] = vertical.areas(area);
-        let horizontal = Layout::horizontal([20]).flex(Flex::Center);
+        let horizontal = Layout::horizontal([60]).flex(Flex::Center);
         let [area] = horizontal.areas(area);
 
         let window = Block::bordered()
             .border_style(THEME.popup)
             .title(Line::from("New Task"));
 
-        Paragraph::new("You have unsaved data")
+        Paragraph::new(self.text.as_str())
             .block(window)
             .wrap(Wrap {trim: true})
             .render(area, buf);
     }
+
 }

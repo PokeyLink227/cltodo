@@ -2,8 +2,11 @@ use ratatui::{prelude::*, widgets::*};
 use crossterm::event::{KeyCode};
 use crate::{
     theme::{THEME},
-    popup::{NewTaskPopup},
+    popup::{PopupStatus, NewTaskPopup},
 };
+
+#[allow(unused_imports)]
+#[allow(dead_code)]
 
 pub enum TaskStatus {
     NotStarted,
@@ -48,24 +51,34 @@ pub struct TaskListTab {
     pub selected: usize,
     pub task_lists: Vec<TaskList>,
 
-    pub new_task_window: Option<NewTaskPopup>,
+    pub new_task_window: NewTaskPopup,
 }
 
 impl TaskListTab {
     pub fn handle_input(&mut self, key: KeyCode) {
-        match key {
-            KeyCode::Char('h') => self.previous_tab(),
-            KeyCode::Char('l') => self.next_tab(),
-            KeyCode::Char('k') => self.task_lists[self.selected].previous_task(),
-            KeyCode::Char('j') => self.task_lists[self.selected].next_task(),
-            KeyCode::Char('a') => self.new_task(),
-            _ => {},
+        if let PopupStatus::InUse = self.new_task_window.status {
+            self.new_task_window.handle_input(key);
+            if let PopupStatus::Finished = self.new_task_window.status {
+                self.task_lists[self.selected].tasks.push(Task {
+                    name: std::mem::take(&mut self.new_task_window.text),
+                    status: TaskStatus::NotStarted}
+                );
+                self.new_task_window.status = PopupStatus::Closed;
+            }
+        } else {
+            match key {
+                KeyCode::Char('h') => self.previous_tab(),
+                KeyCode::Char('l') => self.next_tab(),
+                KeyCode::Char('k') => self.task_lists[self.selected].previous_task(),
+                KeyCode::Char('j') => self.task_lists[self.selected].next_task(),
+                KeyCode::Char('a') => self.new_task(),
+                _ => {},
+            }
         }
     }
 
     fn new_task(&mut self) {
-        self.new_task_window = Some(NewTaskPopup {
-        });
+        self.new_task_window.status = PopupStatus::InUse;
         //self.task_lists[self.selected].tasks.push(Task {name: "test".to_string(), status: TaskStatus::NotStarted});
     }
 
@@ -134,8 +147,8 @@ impl Widget for &TaskListTab {
         tasks_border.render(tasks_area, buf);
 
         // Popup Rendering
-        if let Some(window) = &self.new_task_window {
-            window.render(area, buf);
+        if let PopupStatus::InUse = self.new_task_window.status {
+            self.new_task_window.render(area, buf);
         }
     }
 }

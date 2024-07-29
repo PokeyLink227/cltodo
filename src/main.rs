@@ -1,3 +1,5 @@
+#![allow(warnings)]
+
 use std::io::{self, stdout};
 use crossterm::{
     event::{self, Event, KeyCode},
@@ -21,6 +23,7 @@ mod tui;
 mod theme;
 mod tabs;
 mod popup;
+
 
 enum RunningMode {
     Running,
@@ -177,9 +180,26 @@ fn main() -> io::Result<()> {
                     Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
                     Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
                     Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
+                    Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
+                    Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
+                    Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
+                    Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
+                    Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
+                    Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
+                    Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
+                    Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
+                    Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
+                    Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
+                    Task {name: "do sasdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddome more work".to_string(), status: TaskStatus::Finished},
+                    Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
+                    Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
+                    Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
                 ]},
             ],
-            new_task_window: None,
+            new_task_window: NewTaskPopup {
+                status: PopupStatus::Closed,
+                text: String::new(),
+            },
         },
         calender_tab: CalenderTab {},
         options_tab: OptionsTab {},
