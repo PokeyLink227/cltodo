@@ -5,9 +5,6 @@ use crate::{
     popup::{PopupStatus, NewTaskPopup},
 };
 
-#[allow(unused_imports)]
-#[allow(dead_code)]
-
 #[derive(Default)]
 pub enum TaskStatus {
     #[default]
@@ -51,6 +48,7 @@ impl TaskList {
 }
 
 pub struct TaskListTab {
+    pub controls: [(&'static str, &'static str); 2],
     pub selected: usize,
     pub task_lists: Vec<TaskList>,
 

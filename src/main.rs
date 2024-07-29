@@ -12,6 +12,7 @@ use ratatui::{
         Block, Paragraph, Widget,
         block::{Position, Title},
     },
+    layout::Flex,
 };
 use crate::{
     tabs::*,
@@ -161,7 +162,33 @@ impl App {
             })
             .collect();
 
-        Line::from(spans).centered().render(area, buf);
+        let main_controls = Line::from(spans);
+
+         match self.current_tab {
+            Tab::TaskList => {
+                let sub_spans: Vec<Span> = self.task_list_tab.controls
+                    .iter()
+                    .flat_map(|(key, desc)| {
+                        let key = Span::from(format!(" {key} ")).style(THEME.key_bind);
+                        let desc = Span::from(format!(" {desc} ")).style(THEME.key_desc);
+                        [key, desc]
+                    })
+                    .collect();
+                let sub_controls = Line::from(sub_spans);
+
+                let horizontal = Layout::horizontal([
+                    Constraint::Length(main_controls.width() as u16),
+                    Constraint::Length(sub_controls.width() as u16),
+                ]).flex(Flex::Center);
+                let [main_area, sub_area] = horizontal.areas(area);
+
+                main_controls.render(main_area, buf);
+                sub_controls.render(sub_area, buf);
+            },
+            _ => {
+                main_controls.centered().render(area, buf);
+            },
+        }
     }
 
 }
@@ -172,12 +199,16 @@ fn main() -> io::Result<()> {
         mode: RunningMode::Running,
         current_tab: Tab::TaskList,
         task_list_tab: TaskListTab {
+            controls: [
+                ("H", "Prev. List"),
+                ("L", "Next List"),
+            ],
             selected: 0,
             task_lists: vec![
                 TaskList {name: "Test1 Long tasklist name".to_string(), selected: 0, tasks: Vec::new()},
-                TaskList {name: "Test2".to_string(), selected: 0, tasks: vec![
-                    Task {name: "do work".to_string(), status: TaskStatus::NotStarted},
-                    Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
+                TaskList {name: "cl-todo stuff".to_string(), selected: 0, tasks: vec![
+                    Task {name: "dynamic keybinds bar".to_string(), status: TaskStatus::NotStarted},
+                    Task {name: "add background to popup".to_string(), status: TaskStatus::Finished},
                     Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
                     Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
                     Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
