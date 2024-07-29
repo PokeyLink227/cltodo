@@ -196,10 +196,7 @@ fn main() -> io::Result<()> {
                     Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
                 ]},
             ],
-            new_task_window: NewTaskPopup {
-                status: PopupStatus::Closed,
-                text: String::new(),
-            },
+            new_task_window: NewTaskPopup::default(),
         },
         calender_tab: CalenderTab {},
         options_tab: OptionsTab {},

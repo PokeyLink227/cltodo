@@ -8,12 +8,15 @@ use crate::{
 #[allow(unused_imports)]
 #[allow(dead_code)]
 
+#[derive(Default)]
 pub enum TaskStatus {
+    #[default]
     NotStarted,
     InProgress,
     Finished,
 }
 
+#[derive(Default)]
 pub struct Task {
     pub name: String,
     pub status: TaskStatus,

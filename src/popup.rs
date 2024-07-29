@@ -9,12 +9,15 @@ use crate::{
     tabs::{TaskListTab, TaskList, Task, TaskStatus},
 };
 
+#[derive(Default)]
 pub enum PopupStatus {
     InUse,
     Finished,
+    #[default]
     Closed,
 }
 
+#[derive(Default)]
 pub struct NewTaskPopup {
     pub status: PopupStatus,
     pub text: String,
