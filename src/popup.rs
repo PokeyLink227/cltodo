@@ -37,18 +37,28 @@ impl NewTaskPopup {
 impl Widget for &NewTaskPopup {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let vertical = Layout::vertical([5]).flex(Flex::Center);
-        let [area] = vertical.areas(area);
         let horizontal = Layout::horizontal([60]).flex(Flex::Center);
+        let [area] = vertical.areas(area);
         let [area] = horizontal.areas(area);
 
         let window = Block::bordered()
             .border_style(THEME.popup)
             .title(Line::from("New Task"));
 
-        Paragraph::new(self.text.as_str())
-            .block(window)
-            .wrap(Wrap {trim: true})
-            .render(area, buf);
+        let win_area = window.inner(area);
+        let vert = Layout::vertical([1, 1, 1]);
+        let [text_area, mid, bot] = vert.areas(win_area);
+
+        //let text_entry = Paragraph::new(self.text.as_str()).wrap(Wrap {trim: true});
+
+        Line::from(vec![
+            Span::from("Desc: "),
+            Span::from(self.text.as_str()),
+        ])
+            .style(THEME.popup_selected)
+            .render(text_area, buf);
+
+        window.render(area, buf);
     }
 
 }
