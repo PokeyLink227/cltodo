@@ -73,9 +73,23 @@ impl TaskListTab {
                 KeyCode::Char('k') => self.task_lists[self.selected].previous_task(),
                 KeyCode::Char('j') => self.task_lists[self.selected].next_task(),
                 KeyCode::Char('a') => self.new_task(),
+                KeyCode::Char('e') => self.interact(),
+                KeyCode::Char('d') => self.delete_task(),
                 _ => {},
             }
         }
+    }
+
+    fn delete_task(&mut self) {
+        let index = self.task_lists[self.selected].selected;
+        self.task_lists[self.selected].tasks.remove(index);
+        if index == self.task_lists[self.selected].tasks.len() {
+            self.task_lists[self.selected].previous_task();
+        }
+    }
+
+    fn interact(&mut self) {
+
     }
 
     fn new_task(&mut self) {
