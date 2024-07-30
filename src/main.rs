@@ -202,6 +202,7 @@ fn main() -> io::Result<()> {
             controls: [
                 ("H", "Prev. List"),
                 ("L", "Next List"),
+                ("E", "Interact"),
             ],
             selected: 0,
             task_lists: vec![
@@ -209,7 +210,7 @@ fn main() -> io::Result<()> {
                 TaskList {name: "cl-todo stuff".to_string(), selected: 0, tasks: vec![
                     Task {name: "dynamic keybinds bar".to_string(), status: TaskStatus::NotStarted},
                     Task {name: "add background to popup".to_string(), status: TaskStatus::Finished},
-                    Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
+                    Task {name: "reduce rendering time (might use memoization from layout)".to_string(), status: TaskStatus::Finished},
                     Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
                     Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
                     Task {name: "do some more work".to_string(), status: TaskStatus::Finished},

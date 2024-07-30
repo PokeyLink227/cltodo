@@ -18,9 +18,19 @@ pub enum PopupStatus {
 }
 
 #[derive(Default)]
+enum Mode {
+    #[default]
+    Editing,
+    Navigating,
+}
+
+// rename to TaskEditor
+// create method to export/consume new task data
+#[derive(Default)]
 pub struct NewTaskPopup {
     pub status: PopupStatus,
     pub text: String,
+    mode: Mode,
 }
 
 impl NewTaskPopup {

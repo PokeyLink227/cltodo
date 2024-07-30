@@ -48,7 +48,7 @@ impl TaskList {
 }
 
 pub struct TaskListTab {
-    pub controls: [(&'static str, &'static str); 2],
+    pub controls: [(&'static str, &'static str); 3],
     pub selected: usize,
     pub task_lists: Vec<TaskList>,
 
