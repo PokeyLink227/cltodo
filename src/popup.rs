@@ -9,18 +9,19 @@ use crate::{
     tabs::{TaskListTab, TaskList, Task, TaskStatus},
 };
 
-#[derive(Default)]
+#[derive(Default, PartialEq)]
 pub enum PopupStatus {
     InUse,
-    Finished,
+    Canceled,
+    Confirmed,
     #[default]
     Closed,
 }
 
 #[derive(Default, PartialEq)]
 enum Mode {
-    #[default]
     Editing,
+    #[default]
     Navigating,
 }
 
@@ -49,14 +50,45 @@ impl NewTaskPopup {
                 Mode::Editing => match key {
                     KeyCode::Char(c) => self.text.push(c),
                     KeyCode::Backspace => { self.text.pop(); },
-                    KeyCode::Enter => self.status = PopupStatus::Finished,
+                    KeyCode::Enter => self.mode = Mode::Navigating,
                     _ => {},
                 },
-                Mode::Navigating => {},
+                Mode::Navigating => match key {
+                    KeyCode::Enter => self.mode = Mode::Editing,
+                    KeyCode::Char('j') => self.selected_field = NewTaskField::Cancel,
+                    KeyCode::Char('l') => self.selected_field = NewTaskField::Confirm,
+                    _ => {},
+                },
             },
-            NewTaskField::Cancel => {},
-            NewTaskField::Confirm => {},
+            NewTaskField::Cancel => match key {
+                KeyCode::Enter | KeyCode::Char('e') => self.status = PopupStatus::Canceled,
+                KeyCode::Char('k') => self.selected_field = NewTaskField::Description,
+                KeyCode::Char('l') => self.selected_field = NewTaskField::Confirm,
+                _ => {},
+            },
+            NewTaskField::Confirm => match key {
+                KeyCode::Enter | KeyCode::Char('e') => self.status = PopupStatus::Confirmed,
+                KeyCode::Char('h') => self.selected_field = NewTaskField::Cancel,
+                KeyCode::Char('k') => self.selected_field = NewTaskField::Description,
+                _ => {},
+            },
         }
+    }
+
+    pub fn take_task(&mut self) -> Task {
+        Task {
+            name: std::mem::take(&mut self.text),
+            status: TaskStatus::NotStarted,
+        }
+    }
+
+    pub fn edit_task(&mut self) {
+
+    }
+
+    pub fn new_task(&mut self) {
+        self.status = PopupStatus::InUse;
+        self.selected_field = NewTaskField::Description;
     }
 }
 
@@ -84,7 +116,9 @@ impl Widget for &NewTaskPopup {
         Paragraph::new(" [Cancel] ")
             .style(if self.selected_field == NewTaskField::Cancel {THEME.popup_selected} else {THEME.popup})
             .render(cancel_area, buf);
-        Paragraph::new(" [Confirm] ").render(quit_area, buf);
+        Paragraph::new(" [Confirm] ")
+            .style(if self.selected_field == NewTaskField::Confirm {THEME.popup_selected} else {THEME.popup})
+            .render(quit_area, buf);
 
         //let text_entry = Paragraph::new(self.text.as_str()).wrap(Wrap {trim: true});
 

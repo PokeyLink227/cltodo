@@ -57,13 +57,10 @@ pub struct TaskListTab {
 
 impl TaskListTab {
     pub fn handle_input(&mut self, key: KeyCode) {
-        if let PopupStatus::InUse = self.new_task_window.status {
+        if PopupStatus::InUse == self.new_task_window.status {
             self.new_task_window.handle_input(key);
-            if let PopupStatus::Finished = self.new_task_window.status {
-                self.task_lists[self.selected].tasks.push(Task {
-                    name: std::mem::take(&mut self.new_task_window.text),
-                    status: TaskStatus::NotStarted}
-                );
+            if PopupStatus::Confirmed == self.new_task_window.status {
+                self.task_lists[self.selected].tasks.push(self.new_task_window.take_task());
                 self.new_task_window.status = PopupStatus::Closed;
             }
         } else {
@@ -93,7 +90,7 @@ impl TaskListTab {
     }
 
     fn new_task(&mut self) {
-        self.new_task_window.status = PopupStatus::InUse;
+        self.new_task_window.new_task();
         //self.task_lists[self.selected].tasks.push(Task {name: "test".to_string(), status: TaskStatus::NotStarted});
     }
 
