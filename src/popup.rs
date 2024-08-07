@@ -39,6 +39,8 @@ enum NewTaskField {
 pub struct NewTaskPopup {
     pub status: PopupStatus,
     pub text: String,
+
+    task: Task,
     mode: Mode,
     selected_field: NewTaskField,
 }
@@ -48,8 +50,8 @@ impl NewTaskPopup {
         match self.selected_field {
             NewTaskField::Description => match self.mode {
                 Mode::Editing => match key {
-                    KeyCode::Char(c) => self.text.push(c),
-                    KeyCode::Backspace => { self.text.pop(); },
+                    KeyCode::Char(c) => self.task.name.push(c),
+                    KeyCode::Backspace => { self.task.name.pop(); },
                     KeyCode::Enter => self.mode = Mode::Navigating,
                     _ => {},
                 },
@@ -76,10 +78,7 @@ impl NewTaskPopup {
     }
 
     pub fn take_task(&mut self) -> Task {
-        Task {
-            name: std::mem::take(&mut self.text),
-            status: TaskStatus::NotStarted,
-        }
+        std::mem::take(&mut self.task)
     }
 
     pub fn edit_task(&mut self) {
@@ -89,6 +88,7 @@ impl NewTaskPopup {
     pub fn new_task(&mut self) {
         self.status = PopupStatus::InUse;
         self.selected_field = NewTaskField::Description;
+        self.mode = Mode::Editing;
     }
 }
 
@@ -99,11 +99,14 @@ impl Widget for &NewTaskPopup {
         let [area] = vertical.areas(area);
         let [area] = horizontal.areas(area);
 
+
         let window = Block::bordered()
             .border_style(THEME.popup)
             .title(Line::from("New Task"));
 
         let win_area = window.inner(area);
+        Clear.render(win_area, buf);
+
         let vert = Layout::vertical([1, 1, 1]);
         let [text_area, mid, bot_area] = vert.areas(win_area);
 
@@ -124,7 +127,7 @@ impl Widget for &NewTaskPopup {
 
         Line::from(vec![
             Span::from("Desc: "),
-            Span::from(self.text.as_str()),
+            Span::from(self.task.name.as_str()),
         ])
             .style(if self.selected_field == NewTaskField::Description {THEME.popup_selected} else {THEME.popup})
             .render(text_area, buf);

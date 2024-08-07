@@ -78,6 +78,9 @@ impl TaskListTab {
     }
 
     fn delete_task(&mut self) {
+        if self.task_lists.len() == 0 { return; }
+        if self.task_lists[self.selected].tasks.len() == 0 { return; }
+
         let index = self.task_lists[self.selected].selected;
         self.task_lists[self.selected].tasks.remove(index);
         if index == self.task_lists[self.selected].tasks.len() {
@@ -86,7 +89,15 @@ impl TaskListTab {
     }
 
     fn interact(&mut self) {
+        if self.task_lists.len() == 0 { return; }
+        if self.task_lists[self.selected].tasks.len() == 0 { return; }
 
+        let index = self.task_lists[self.selected].selected;
+        self.task_lists[self.selected].tasks[index].status = match self.task_lists[self.selected].tasks[index].status {
+            TaskStatus::NotStarted => TaskStatus::InProgress,
+            TaskStatus::InProgress => TaskStatus::Finished,
+            TaskStatus::Finished => TaskStatus::NotStarted,
+        }
     }
 
     fn new_task(&mut self) {

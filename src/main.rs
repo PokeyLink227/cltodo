@@ -217,7 +217,7 @@ fn main() -> io::Result<()> {
                     Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
                     Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
                     Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
-                    Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
+                    Task {name: "do some morehhhhhhhhhhhhhhhhhhhh work".to_string(), status: TaskStatus::Finished},
                     Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
                     Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
                     Task {name: "do some more work".to_string(), status: TaskStatus::Finished},
