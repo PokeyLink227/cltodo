@@ -207,9 +207,15 @@ fn main() -> io::Result<()> {
             selected: 0,
             task_lists: vec![
                 TaskList {name: "cl-todo stuff".to_string(), selected: 0, tasks: vec![
-                    Task {name: "dynamic keybinds bar".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date {year: 2024, month: 1, day: 15}},
-                    Task {name: "add background to popup".to_string(), status: TaskStatus::Finished, duration: Duration::default(), date: Date::default()},
-                    Task {name: "reduce rendering time (might use memoization from layout)".to_string(), status: TaskStatus::Finished, duration: Duration::default(), date: Date::default()},
+                    Task {name: "dynamic keybinds bar".to_string(), status: TaskStatus::InProgress, duration: Duration::default(), date: Date {year: 2024, month: 1, day: 15}},
+                    Task {name: "add background to popup".to_string(), status: TaskStatus::Finished, duration: Duration::default(), date: Date {year: 2024, month: 7, day: 8}},
+                    Task {name: "reduce rendering time (might use memoization from layout)".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
+                    Task {name: "read/write to file to save list data".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
+                    Task {name: "make dropdown lists for the popup".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
+                    Task {name: "Improve navigation and allowing child windows to capture inputs".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
+                    Task {name: "Task editing".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
+                    Task {name: "add notes section to tasks?".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
+                    Task {name: "add sorting options to task lists".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
                 ]},
                 TaskList {name: "Test1 Long tasklist name".to_string(), selected: 0, tasks: Vec::new()},
             ],
