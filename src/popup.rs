@@ -38,7 +38,6 @@ enum NewTaskField {
 #[derive(Default)]
 pub struct NewTaskPopup {
     pub status: PopupStatus,
-    pub text: String,
 
     task: Task,
     mode: Mode,

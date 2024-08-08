@@ -1,9 +1,59 @@
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{
+    prelude::*,
+    widgets::*,
+    layout::{Offset},
+};
 use crossterm::event::{KeyCode};
 use crate::{
     theme::{THEME},
     popup::{PopupStatus, NewTaskPopup},
 };
+
+#[derive(Default, Copy, Clone, Debug)]
+pub struct Duration {
+    pub days: u16,
+    pub hours: u8,
+    pub minutes: u8,
+}
+
+impl std::fmt::Display for Duration {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:02}:{:02}:{:02}", self.days, self.hours, self.minutes)
+    }
+}
+
+#[derive(Default, Copy, Clone, Debug)]
+pub struct Date {
+    pub year: u16,
+    pub month: u8,
+    pub day: u8,
+}
+
+impl std::fmt::Display for Date {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} {:02}, {:04}",
+            match self.month {
+                1  => "Jan",
+                2  => "Feb",
+                3  => "Mar",
+                4  => "Apr",
+                5  => "Ma",
+                6  => "Jun",
+                7  => "Jul",
+                8  => "Aug",
+                9  => "Sep",
+                10 => "Oct",
+                11 => "Nov",
+                12 => "Dec",
+                _  => "ERR",
+            },
+            self.day,
+            self.year,
+        )
+    }
+}
 
 #[derive(Default)]
 pub enum TaskStatus {
@@ -17,6 +67,8 @@ pub enum TaskStatus {
 pub struct Task {
     pub name: String,
     pub status: TaskStatus,
+    pub duration: Duration,
+    pub date: Date,
 }
 
 pub struct TaskList {
@@ -144,30 +196,43 @@ impl Widget for &TaskListTab {
         Line::from(spans).style(THEME.root).render(task_bar, buf);
 
         // Task List Rendering
-        let mut lines: Vec<Line> = Vec::with_capacity(self.task_lists[self.selected].tasks.len());
-        for i in 0..self.task_lists[self.selected].tasks.len() {
-            lines.push(Line::from(vec![
-                Span::styled(
-                    format!(" {} ", if i == self.task_lists[self.selected].selected {'>'} else {' '}),
-                    if i == self.task_lists[self.selected].selected {THEME.task_selected} else {THEME.task}
-                ),
-                Span::styled(
-                    format!(
-                        "[{}] {} ",
-                        match self.task_lists[self.selected].tasks[i].status {
-                            TaskStatus::NotStarted => ' ',
-                            TaskStatus::InProgress => '-',
-                            TaskStatus::Finished => 'X',
-                        },
-                        self.task_lists[self.selected].tasks[i].name
-                    ),
-                    if i == self.task_lists[self.selected].selected {THEME.task_selected} else {THEME.task}
-                ),
-            ]));
-        }
+        let horizontal = Layout::horizontal([
+            Constraint::Length(4),
+            Constraint::Min(20),
+            Constraint::Length(20),
+            Constraint::Length(15),
+        ]);
+
         let tasks_border = Block::bordered().border_style(THEME.task_border).border_type(BorderType::Thick);
-        Text::from(lines).render(tasks_border.inner(tasks_area), buf);
+        let mut tasks_inner_area = tasks_border.inner(tasks_area);
         tasks_border.render(tasks_area, buf);
+
+        let mut index = 0;
+        for task in &self.task_lists[self.selected].tasks {
+            if !area.intersects(tasks_inner_area) { break; }
+
+            let [mark_area, desc_area, date_area, duration_area] = horizontal.areas(tasks_inner_area);
+            Span::styled(
+                format!(
+                    "[{}] ",
+                    match self.task_lists[self.selected].tasks[index].status {
+                        TaskStatus::NotStarted => ' ',
+                        TaskStatus::InProgress => '-',
+                        TaskStatus::Finished => 'X',
+                    }
+                ),
+                if index == self.task_lists[self.selected].selected {THEME.task_selected} else {THEME.task}
+            ).render(mark_area, buf);
+            Span::styled(
+                format!(" {} ", task.name),
+                if index == self.task_lists[self.selected].selected {THEME.task_selected} else {THEME.task}
+            ).render(desc_area, buf);
+            Span::from(format!(" Date: {} ", task.date)).render(date_area, buf);
+            Span::from(format!(" Dur: {} ", task.duration)).render(duration_area, buf);
+
+            tasks_inner_area = tasks_inner_area.offset(Offset {x: 0, y: 1});
+            index += 1;
+        }
 
         // Popup Rendering
         if let PopupStatus::InUse = self.new_task_window.status {
