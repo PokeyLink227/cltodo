@@ -188,8 +188,15 @@ impl Widget for &TaskListTab {
 
         // Task Bar Rendering
         let mut spans: Vec<Span> = Vec::with_capacity(self.task_lists.len() + 1);
+        let mut highlight_pos: Rect = Rect {x: tasks_area.x + 11, y: tasks_area.y, width: 0, height: 1};
         spans.push(Span::from("Task Lists:"));
         for i in 0..self.task_lists.len() {
+
+            if highlight_pos.width == 0 {
+                if i != self.selected {highlight_pos.x += self.task_lists[i].name.len() as u16 + 2;}
+                else {highlight_pos.width = self.task_lists[i].name.len() as u16 + 2;}
+            }
+
             spans.push(Span::from(format!(" {} ", self.task_lists[i].name))
                 .style(if i == self.selected {THEME.root_tab_selected} else {THEME.root}));
         }
@@ -206,6 +213,7 @@ impl Widget for &TaskListTab {
         let tasks_border = Block::bordered().border_style(THEME.task_border).border_type(BorderType::Thick);
         let mut tasks_inner_area = tasks_border.inner(tasks_area);
         tasks_border.render(tasks_area, buf);
+        Block::bordered().style(THEME.task_selected).borders(Borders::TOP).render(highlight_pos, buf);
 
         let mut index = 0;
         for task in &self.task_lists[self.selected].tasks {
