@@ -216,6 +216,8 @@ fn main() -> io::Result<()> {
                     Task {name: "Task editing".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
                     Task {name: "add notes section to tasks?".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
                     Task {name: "add sorting options to task lists".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
+                    Task {name: "add bar highlighting under selected tab instead of connecting to tab".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
+                    Task {name: "add background and possible expansion to tasks".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
                 ]},
                 TaskList {name: "Test1 Long tasklist name".to_string(), selected: 0, tasks: Vec::new()},
             ],
