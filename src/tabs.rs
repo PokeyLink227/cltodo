@@ -213,7 +213,7 @@ impl Widget for &TaskListTab {
         let tasks_border = Block::bordered().border_style(THEME.task_border).border_type(BorderType::Thick);
         let mut tasks_inner_area = tasks_border.inner(tasks_area);
         tasks_border.render(tasks_area, buf);
-        Block::bordered().style(THEME.task_selected).borders(Borders::TOP).render(highlight_pos, buf);
+        Block::bordered().style(THEME.task_selected).borders(Borders::TOP).border_type(BorderType::Thick).render(highlight_pos, buf);
 
         let mut index = 0;
         for task in &self.task_lists[self.selected].tasks {
