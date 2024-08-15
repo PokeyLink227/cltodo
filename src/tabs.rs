@@ -209,10 +209,18 @@ impl Widget for &TaskListTab {
             Constraint::Length(10),
         ]);
 
-        let tasks_border = Block::bordered().border_style(THEME.task_border).border_type(BorderType::Thick);
+        let tasks_border = Block::bordered()
+            .border_style(THEME.task_border)
+            .border_type(BorderType::Thick);
+            //.title_top(Line::from(" Date   Duration ").right_aligned());
         let mut tasks_inner_area = tasks_border.inner(tasks_area);
+
         tasks_border.render(tasks_area, buf);
         Block::bordered().style(THEME.task_selected).borders(Borders::TOP).border_type(BorderType::Thick).render(highlight_pos, buf);
+
+        let [_, _, date_area, duration_area] = horizontal.areas(tasks_area);
+        Span::styled("Date", THEME.task_border).render(date_area, buf);
+        Span::styled("Duration", THEME.task_border).render(duration_area, buf);
 
         let mut index = 0;
         for task in &self.task_lists[self.selected].tasks {
