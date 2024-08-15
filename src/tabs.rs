@@ -24,7 +24,7 @@ impl std::fmt::Display for Duration {
 
 #[derive(Default, Copy, Clone, Debug)]
 pub struct Date {
-    pub year: u16,
+    //pub year: u16,
     pub month: u8,
     pub day: u8,
 }
@@ -33,7 +33,7 @@ impl std::fmt::Display for Date {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{} {:02}, {:04}",
+            "{} {:02}",
             match self.month {
                 1  => "Jan",
                 2  => "Feb",
@@ -50,7 +50,6 @@ impl std::fmt::Display for Date {
                 _  => "ERR",
             },
             self.day,
-            self.year,
         )
     }
 }
@@ -206,8 +205,8 @@ impl Widget for &TaskListTab {
         let horizontal = Layout::horizontal([
             Constraint::Length(4),
             Constraint::Min(20),
-            Constraint::Length(20),
-            Constraint::Length(15),
+            Constraint::Length(8),
+            Constraint::Length(10),
         ]);
 
         let tasks_border = Block::bordered().border_style(THEME.task_border).border_type(BorderType::Thick);
@@ -235,8 +234,8 @@ impl Widget for &TaskListTab {
                 format!(" {} ", task.name),
                 if index == self.task_lists[self.selected].selected {THEME.task_selected} else {THEME.task}
             ).render(desc_area, buf);
-            Span::from(format!(" Date: {} ", task.date)).render(date_area, buf);
-            Span::from(format!(" Dur: {} ", task.duration)).render(duration_area, buf);
+            Span::from(format!(" {} ", task.date)).render(date_area, buf);
+            Span::from(format!(" {} ", task.duration)).render(duration_area, buf);
 
             tasks_inner_area = tasks_inner_area.offset(Offset {x: 0, y: 1});
             index += 1;

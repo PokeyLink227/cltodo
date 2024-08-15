@@ -207,8 +207,8 @@ fn main() -> io::Result<()> {
             selected: 0,
             task_lists: vec![
                 TaskList {name: "cl-todo stuff".to_string(), selected: 0, tasks: vec![
-                    Task {name: "dynamic keybinds bar".to_string(), status: TaskStatus::InProgress, duration: Duration::default(), date: Date {year: 2024, month: 1, day: 15}},
-                    Task {name: "add background to popup".to_string(), status: TaskStatus::Finished, duration: Duration::default(), date: Date {year: 2024, month: 7, day: 8}},
+                    Task {name: "dynamic keybinds bar".to_string(), status: TaskStatus::InProgress, duration: Duration::default(), date: Date {month: 1, day: 15}},
+                    Task {name: "add background to popup".to_string(), status: TaskStatus::Finished, duration: Duration::default(), date: Date {month: 7, day: 8}},
                     Task {name: "reduce rendering time (might use memoization from layout)".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
                     Task {name: "read/write to file to save list data".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
                     Task {name: "make dropdown lists for the popup".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
