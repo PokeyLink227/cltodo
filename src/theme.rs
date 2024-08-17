@@ -15,8 +15,8 @@ pub struct Theme {
 pub const THEME: Theme = Theme {
     root: Style::new().fg(WHITE).bg(DARKER_GRAY),
     root_tab_selected: Style::new().fg(YELLOW).bg(DARK_GRAY),
-    popup: Style::new().fg(WHITE),
-    popup_selected: Style::new().fg(WHITE).bg(GRAY),
+    popup: Style::new().fg(WHITE).bg(DARKER_GRAY),
+    popup_selected: Style::new().fg(WHITE).bg(DARK_GRAY),
     task: Style::new(),
     task_selected: Style::new().fg(YELLOW),
     task_border: Style::new().fg(DARK_GRAY),

@@ -25,6 +25,15 @@ enum Mode {
     Navigating,
 }
 
+impl std::fmt::Display for Mode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            Self::Editing => "Edit",
+            Self::Navigating => "Nav",
+        })
+    }
+}
+
 #[derive(Default, PartialEq)]
 enum NewTaskField {
     #[default]
@@ -100,14 +109,17 @@ impl Widget for &NewTaskPopup {
 
 
         let window = Block::bordered()
+            .style(THEME.popup)
             .border_style(THEME.popup)
-            .title(Line::from("New Task"));
+            .title(Line::from("New Task"))
+            .title_bottom(format!(" {} ", self.mode));
 
         let win_area = window.inner(area);
         Clear.render(win_area, buf);
+        window.render(area, buf);
 
         let vert = Layout::vertical([1, 1, 1]);
-        let [text_area, mid, bot_area] = vert.areas(win_area);
+        let [top_area, mid_area, bot_area] = vert.areas(win_area);
 
         let bot_horiz = Layout::horizontal([
             Constraint::Min(0),
@@ -122,8 +134,21 @@ impl Widget for &NewTaskPopup {
             .style(if self.selected_field == NewTaskField::Confirm {THEME.popup_selected} else {THEME.popup})
             .render(quit_area, buf);
 
-        //let text_entry = Paragraph::new(self.text.as_str()).wrap(Wrap {trim: true});
+        let mid_horiz = Layout::horizontal([
+            Constraint::Length(10),
+            Constraint::Length(13),
+            Constraint::Length(14),
+        ]);
+        let [status_area, date_area, duration_area] = mid_horiz.areas(mid_area);
+        Span::styled("Status: 0", THEME.popup).render(status_area, buf);
+        Span::styled("Date: ERR 00", THEME.popup).render(date_area, buf);
+        Span::styled("Dur: 00:00:00", THEME.popup).render(duration_area, buf);
 
+        //let text_entry = Paragraph::new(self.text.as_str()).wrap(Wrap {trim: true});
+        let top_horiz = Layout::horizontal([
+            Constraint::Min(0),
+        ]);
+        let [text_area] = top_horiz.areas(top_area);
         Line::from(vec![
             Span::from("Desc: "),
             Span::from(self.task.name.as_str()),
@@ -131,7 +156,6 @@ impl Widget for &NewTaskPopup {
             .style(if self.selected_field == NewTaskField::Description {THEME.popup_selected} else {THEME.popup})
             .render(text_area, buf);
 
-        window.render(area, buf);
     }
 
 }
