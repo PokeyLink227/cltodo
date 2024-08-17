@@ -8,6 +8,7 @@ pub struct Theme {
     pub task: Style,
     pub task_selected: Style,
     pub task_border: Style,
+    pub task_title: Style,
     pub key_bind: Style,
     pub key_desc: Style,
 }
@@ -20,6 +21,7 @@ pub const THEME: Theme = Theme {
     task: Style::new(),
     task_selected: Style::new().fg(YELLOW),
     task_border: Style::new().fg(DARK_GRAY),
+    task_title: Style::new().fg(GRAY),
     key_bind: Style::new().fg(BLACK).bg(DARK_GRAY),
     key_desc: Style::new().fg(DARK_GRAY).bg(BLACK),
 };

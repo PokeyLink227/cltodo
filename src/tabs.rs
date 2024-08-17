@@ -219,8 +219,8 @@ impl Widget for &TaskListTab {
         Block::bordered().style(THEME.task_selected).borders(Borders::TOP).border_type(BorderType::Thick).render(highlight_pos, buf);
 
         let [_, _, date_area, duration_area] = horizontal.areas(tasks_area);
-        Span::styled("Date", THEME.task_border).render(date_area, buf);
-        Span::styled("Duration", THEME.task_border).render(duration_area, buf);
+        Span::styled("Date", THEME.task_title).render(date_area, buf);
+        Span::styled("Duration", THEME.task_title).render(duration_area, buf);
 
         let mut index = 0;
         for task in &self.task_lists[self.selected].tasks {
