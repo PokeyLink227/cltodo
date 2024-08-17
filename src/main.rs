@@ -97,6 +97,7 @@ impl App {
                     match key.code {
                         KeyCode::Char('q') | KeyCode::Esc => self.mode = RunningMode::Exiting,
                         KeyCode::Tab => self.next_tab(),
+                        KeyCode::BackTab => self.previous_tab(),
                         _ => self.dispatch_input(key.code),
                     }
                 }
@@ -120,6 +121,15 @@ impl App {
             Tab::Calender => Tab::Options,
             Tab::Options => Tab::Profile,
             Tab::Profile => Tab::TaskList,
+        }
+    }
+
+    fn previous_tab(&mut self) {
+        self.current_tab = match self.current_tab {
+            Tab::TaskList => Tab::Profile,
+            Tab::Calender => Tab::TaskList,
+            Tab::Options => Tab::Calender,
+            Tab::Profile => Tab::Options,
         }
     }
 
