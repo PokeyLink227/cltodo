@@ -75,7 +75,7 @@ impl TaskEditorPopup {
                     _ => {},
                 },
                 Mode::Navigating => match key {
-                    KeyCode::Char('e') | KeyCode::Char('/') | KeyCode::Enter => self.mode = Mode::Editing,
+                    KeyCode::Char('e' | '/') | KeyCode::Enter => self.mode = Mode::Editing,
                     KeyCode::Char('j') => self.selected_field = TaskEditorField::Cancel,
                     KeyCode::Char('l') => self.selected_field = TaskEditorField::Status,
                     _ => {},

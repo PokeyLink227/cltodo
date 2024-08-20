@@ -39,7 +39,7 @@ impl std::fmt::Display for Date {
                 2  => "Feb",
                 3  => "Mar",
                 4  => "Apr",
-                5  => "Ma",
+                5  => "May",
                 6  => "Jun",
                 7  => "Jul",
                 8  => "Aug",
@@ -78,7 +78,7 @@ pub struct TaskList {
 
 impl TaskList {
     fn next_task(&mut self) {
-        if self.tasks.len() == 0 { return; }
+        if self.tasks.is_empty() { return; }
 
         if self.selected + 1 == self.tasks.len() {
             self.selected = 0;
@@ -88,7 +88,7 @@ impl TaskList {
     }
 
     fn previous_task(&mut self) {
-        if self.tasks.len() == 0 { return; }
+        if self.tasks.is_empty() { return; }
 
         if self.selected == 0 {
             self.selected = self.tasks.len() - 1;
@@ -134,11 +134,9 @@ impl TaskListTab {
     }
 
     fn delete_task(&mut self) {
-        if self.task_lists.len() == 0 { return; }
-        if self.task_lists[self.selected].tasks.len() == 0 { return; }
+        if self.task_lists.is_empty() || self.task_lists[self.selected].tasks.is_empty() { return; }
 
         let selected_list = &mut self.task_lists[self.selected];
-
         selected_list.tasks.remove(selected_list.selected);
         if selected_list.selected == selected_list.tasks.len() {
             selected_list.previous_task();
@@ -146,28 +144,18 @@ impl TaskListTab {
     }
 
     fn interact(&mut self) {
-        if self.task_lists.len() == 0 { return; }
-        if self.task_lists[self.selected].tasks.len() == 0 { return; }
+        if self.task_lists.is_empty() || self.task_lists[self.selected].tasks.is_empty() { return; }
 
-        let index = self.task_lists[self.selected].selected;
-        /*
-        self.task_lists[self.selected].tasks[index].status = match self.task_lists[self.selected].tasks[index].status {
-            TaskStatus::NotStarted => TaskStatus::InProgress,
-            TaskStatus::InProgress => TaskStatus::Finished,
-            TaskStatus::Finished => TaskStatus::NotStarted,
-        }
-        */
-
-        self.new_task_window.edit_task(self.task_lists[self.selected].tasks[index].clone());
+        let selected_list = &self.task_lists[self.selected];
+        self.new_task_window.edit_task(selected_list.tasks[selected_list.selected].clone());
     }
 
     fn new_task(&mut self) {
         self.new_task_window.new_task();
-        //self.task_lists[self.selected].tasks.push(Task {name: "test".to_string(), status: TaskStatus::NotStarted});
     }
 
     fn next_tab(&mut self) {
-        if self.task_lists.len() == 0 { return; }
+        if self.task_lists.is_empty() { return; }
 
         if self.selected + 1 == self.task_lists.len() {
             self.selected = 0;
@@ -177,7 +165,7 @@ impl TaskListTab {
     }
 
     fn previous_tab(&mut self) {
-        if self.task_lists.len() == 0 { return; }
+        if self.task_lists.is_empty() { return; }
 
         if self.selected == 0 {
             self.selected = self.task_lists.len() - 1;
@@ -197,16 +185,16 @@ impl Widget for &TaskListTab {
 
         // Task Bar Rendering
         let mut spans: Vec<Span> = Vec::with_capacity(self.task_lists.len() + 1);
-        let mut highlight_pos: Rect = Rect {x: tasks_area.x + 11, y: tasks_area.y, width: 0, height: 1};
+        let mut highlight_pos: Rect = Rect {x: tasks_area.x + 11, y: tasks_area.y, width: 0, height: 1}; // 11 is length of "Task Lists:"
         spans.push(Span::from("Task Lists:"));
-        for i in 0..self.task_lists.len() {
 
+        for (i, list) in self.task_lists.iter().enumerate() {
             if highlight_pos.width == 0 {
-                if i != self.selected {highlight_pos.x += self.task_lists[i].name.len() as u16 + 2;}
-                else {highlight_pos.width = self.task_lists[i].name.len() as u16 + 2;}
+                if i == self.selected { highlight_pos.width = list.name.len() as u16 + 2; }
+                else  {highlight_pos.x += list.name.len() as u16 + 2; }
             }
 
-            spans.push(Span::from(format!(" {} ", self.task_lists[i].name))
+            spans.push(Span::from(format!(" {} ", list.name))
                 .style(if i == self.selected {THEME.root_tab_selected} else {THEME.root}));
         }
         Line::from(spans).style(THEME.root).render(task_bar, buf);
@@ -222,7 +210,7 @@ impl Widget for &TaskListTab {
         let tasks_border = Block::bordered()
             .border_style(THEME.task_border)
             .border_type(BorderType::Thick);
-            
+
         let mut tasks_inner_area = tasks_border.inner(tasks_area);
 
         tasks_border.render(tasks_area, buf);
@@ -232,9 +220,8 @@ impl Widget for &TaskListTab {
         Span::styled("Date", THEME.task_title).render(date_area, buf);
         Span::styled("Duration", THEME.task_title).render(duration_area, buf);
 
-        let mut index = 0;
         let selected_list = &self.task_lists[self.selected];
-        for task in &selected_list.tasks {
+        for (index, task) in selected_list.tasks.iter().enumerate() {
             if !area.intersects(tasks_inner_area) { break; }
 
             let [mark_area, desc_area, date_area, duration_area] = horizontal.areas(tasks_inner_area);
@@ -257,7 +244,6 @@ impl Widget for &TaskListTab {
             Span::from(format!(" {} ", task.duration)).render(duration_area, buf);
 
             tasks_inner_area = tasks_inner_area.offset(Offset {x: 0, y: 1});
-            index += 1;
         }
 
         // Popup Rendering
