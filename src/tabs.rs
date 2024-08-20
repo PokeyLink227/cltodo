@@ -62,7 +62,7 @@ pub enum TaskStatus {
     Finished,
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Task {
     pub name: String,
     pub status: TaskStatus,
@@ -144,11 +144,15 @@ impl TaskListTab {
         if self.task_lists[self.selected].tasks.len() == 0 { return; }
 
         let index = self.task_lists[self.selected].selected;
+        /*
         self.task_lists[self.selected].tasks[index].status = match self.task_lists[self.selected].tasks[index].status {
             TaskStatus::NotStarted => TaskStatus::InProgress,
             TaskStatus::InProgress => TaskStatus::Finished,
             TaskStatus::Finished => TaskStatus::NotStarted,
         }
+        */
+
+        self.new_task_window.edit_task(self.task_lists[self.selected].tasks[index].clone());
     }
 
     fn new_task(&mut self) {
