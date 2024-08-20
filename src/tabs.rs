@@ -139,8 +139,8 @@ impl TaskListTab {
 
         let selected_list = &mut self.task_lists[self.selected];
 
-        selected_list.tasks.remove(index);
-        if index == selected_list.tasks.len() {
+        selected_list.tasks.remove(selected_list.selected);
+        if selected_list.selected == selected_list.tasks.len() {
             selected_list.previous_task();
         }
     }
