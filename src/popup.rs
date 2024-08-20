@@ -6,7 +6,7 @@ use ratatui::{
 use crossterm::event::{KeyCode};
 use crate::{
     theme::{THEME},
-    tabs::{TaskListTab, TaskList, Task, TaskStatus},
+    tabs::{Task, TaskStatus},
 };
 
 #[derive(Default, PartialEq)]

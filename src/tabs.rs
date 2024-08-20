@@ -222,7 +222,7 @@ impl Widget for &TaskListTab {
         let tasks_border = Block::bordered()
             .border_style(THEME.task_border)
             .border_type(BorderType::Thick);
-            //.title_top(Line::from(" Date   Duration ").right_aligned());
+            
         let mut tasks_inner_area = tasks_border.inner(tasks_area);
 
         tasks_border.render(tasks_area, buf);
@@ -241,7 +241,7 @@ impl Widget for &TaskListTab {
             Span::styled(
                 format!(
                     "[{}] ",
-                    match selected_list.tasks[index].status {
+                    match task.status {
                         TaskStatus::NotStarted => ' ',
                         TaskStatus::InProgress => '-',
                         TaskStatus::Finished => 'X',

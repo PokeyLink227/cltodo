@@ -1,16 +1,13 @@
-#![allow(warnings)]
+#![allow(unused_variables, dead_code, unused_imports)]
 
-use std::io::{self, stdout};
+use std::io::{self};
 use crossterm::{
-    event::{self, Event, KeyCode},
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    ExecutableCommand,
+    event::{self, KeyCode},
 };
 use ratatui::{
     prelude::*,
     widgets::{
         Block, Paragraph, Widget,
-        block::{Position, Title},
     },
     layout::Flex,
 };
