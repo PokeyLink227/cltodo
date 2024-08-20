@@ -45,12 +45,19 @@ enum TaskEditorField {
     Confirm,
 }
 
+#[derive(Default, PartialEq)]
+pub enum TaskSource {
+    #[default]
+    NewTask,
+    ExistingTask,
+}
+
 // rename to TaskEditor
 // create method to export/consume new task data
 #[derive(Default)]
 pub struct TaskEditorPopup {
     pub status: PopupStatus,
-    pub location: (usize, usize),
+    pub task_source: TaskSource,
 
     task: Task,
     mode: Mode,
@@ -112,17 +119,17 @@ impl TaskEditorPopup {
         std::mem::take(&mut self.task)
     }
 
-    pub fn edit_task(&mut self, location: (usize, usize), task: Task) {
-        self.location = location;
+    pub fn edit_task(&mut self, task: Task) {
         self.task = task;
         self.status = PopupStatus::InUse;
+        self.task_source = TaskSource::ExistingTask;
     }
 
-    pub fn new_task(&mut self, location: (usize, usize)) {
-        self.location = location;
+    pub fn new_task(&mut self) {
         self.status = PopupStatus::InUse;
         self.selected_field = TaskEditorField::Description;
         self.mode = Mode::Editing;
+        self.task_source = TaskSource::NewTask;
     }
 }
 

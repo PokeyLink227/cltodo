@@ -6,7 +6,7 @@ use ratatui::{
 use crossterm::event::{KeyCode};
 use crate::{
     theme::{THEME},
-    popup::{PopupStatus, TaskEditorPopup},
+    popup::{PopupStatus, TaskEditorPopup, TaskSource},
 };
 
 #[derive(Default, Copy, Clone, Debug)]
@@ -111,7 +111,13 @@ impl TaskListTab {
         if PopupStatus::InUse == self.new_task_window.status {
             self.new_task_window.handle_input(key);
             if PopupStatus::Confirmed == self.new_task_window.status {
-                self.task_lists[self.selected].tasks.push(self.new_task_window.take_task());
+                match self.new_task_window.task_source {
+                    TaskSource::NewTask => self.task_lists[self.selected].tasks.push(self.new_task_window.take_task()),
+                    TaskSource::ExistingTask => {
+                        let index = self.task_lists[self.selected].selected;
+                        self.task_lists[self.selected].tasks[index] = self.new_task_window.take_task()
+                    },
+                }
                 self.new_task_window.status = PopupStatus::Closed;
             }
         } else {
@@ -152,11 +158,11 @@ impl TaskListTab {
         }
         */
 
-        self.new_task_window.edit_task((0,0),self.task_lists[self.selected].tasks[index].clone());
+        self.new_task_window.edit_task(self.task_lists[self.selected].tasks[index].clone());
     }
 
     fn new_task(&mut self) {
-        self.new_task_window.new_task((0,0));
+        self.new_task_window.new_task();
         //self.task_lists[self.selected].tasks.push(Task {name: "test".to_string(), status: TaskStatus::NotStarted});
     }
 
