@@ -38,6 +38,9 @@ impl std::fmt::Display for Mode {
 enum NewTaskField {
     #[default]
     Description,
+    Status,
+    Date,
+    Duration,
     Cancel,
     Confirm,
 }
@@ -64,9 +67,9 @@ impl NewTaskPopup {
                     _ => {},
                 },
                 Mode::Navigating => match key {
-                    KeyCode::Enter => self.mode = Mode::Editing,
+                    KeyCode::Char('e') | KeyCode::Char('/') | KeyCode::Enter => self.mode = Mode::Editing,
                     KeyCode::Char('j') => self.selected_field = NewTaskField::Cancel,
-                    KeyCode::Char('l') => self.selected_field = NewTaskField::Confirm,
+                    KeyCode::Char('l') => self.selected_field = NewTaskField::Status,
                     _ => {},
                 },
             },
@@ -80,6 +83,25 @@ impl NewTaskPopup {
                 KeyCode::Enter | KeyCode::Char('e') => self.status = PopupStatus::Confirmed,
                 KeyCode::Char('h') => self.selected_field = NewTaskField::Cancel,
                 KeyCode::Char('k') => self.selected_field = NewTaskField::Description,
+                _ => {},
+            },
+            NewTaskField::Status => match self.mode {
+                Mode::Editing => match key {
+                    KeyCode::Enter => self.mode = Mode::Editing,
+                    _ => {},
+                },
+                Mode::Navigating => match key {
+                    KeyCode::Char('e') => self.mode = Mode::Editing,
+                    KeyCode::Char('l') => self.selected_field = NewTaskField::Date,
+                    _ => {},
+                },
+            },
+            NewTaskField::Date => match key {
+                KeyCode::Char('l') => self.selected_field = NewTaskField::Duration,
+                _ => {},
+            },
+            NewTaskField::Duration => match key {
+                KeyCode::Char('l') => self.selected_field = NewTaskField::Cancel,
                 _ => {},
             },
         }
@@ -140,9 +162,21 @@ impl Widget for &NewTaskPopup {
             Constraint::Length(14),
         ]);
         let [status_area, date_area, duration_area] = mid_horiz.areas(mid_area);
-        Span::styled("Status: 0", THEME.popup).render(status_area, buf);
-        Span::styled("Date: ERR 00", THEME.popup).render(date_area, buf);
-        Span::styled("Dur: 00:00:00", THEME.popup).render(duration_area, buf);
+        Span::styled(
+            format!("Status: 0"),
+            if self.selected_field == NewTaskField::Status {THEME.popup_selected} else {THEME.popup}
+        )
+            .render(status_area, buf);
+        Span::styled(
+            format!("Date: {}", self.task.date),
+            if self.selected_field == NewTaskField::Date {THEME.popup_selected} else {THEME.popup}
+        )
+            .render(date_area, buf);
+        Span::styled(
+            format!("Dur: {}", self.task.duration),
+            if self.selected_field == NewTaskField::Duration {THEME.popup_selected} else {THEME.popup}
+        )
+            .render(duration_area, buf);
 
         //let text_entry = Paragraph::new(self.text.as_str()).wrap(Wrap {trim: true});
         let top_horiz = Layout::horizontal([
