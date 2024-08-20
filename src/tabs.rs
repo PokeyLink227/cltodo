@@ -108,15 +108,14 @@ pub struct TaskListTab {
 
 impl TaskListTab {
     pub fn handle_input(&mut self, key: KeyCode) {
+        let selected_list = &mut self.task_lists[self.selected];
+
         if PopupStatus::InUse == self.new_task_window.status {
             self.new_task_window.handle_input(key);
             if PopupStatus::Confirmed == self.new_task_window.status {
                 match self.new_task_window.task_source {
-                    TaskSource::NewTask => self.task_lists[self.selected].tasks.push(self.new_task_window.take_task()),
-                    TaskSource::ExistingTask => {
-                        let index = self.task_lists[self.selected].selected;
-                        self.task_lists[self.selected].tasks[index] = self.new_task_window.take_task()
-                    },
+                    TaskSource::NewTask => selected_list.tasks.push(self.new_task_window.take_task()),
+                    TaskSource::ExistingTask => selected_list.tasks[selected_list.selected] = self.new_task_window.take_task(),
                 }
                 self.new_task_window.status = PopupStatus::Closed;
             }
@@ -124,8 +123,8 @@ impl TaskListTab {
             match key {
                 KeyCode::Char('h') => self.previous_tab(),
                 KeyCode::Char('l') => self.next_tab(),
-                KeyCode::Char('k') => self.task_lists[self.selected].previous_task(),
-                KeyCode::Char('j') => self.task_lists[self.selected].next_task(),
+                KeyCode::Char('k') => selected_list.previous_task(),
+                KeyCode::Char('j') => selected_list.next_task(),
                 KeyCode::Char('a') => self.new_task(),
                 KeyCode::Char('e') => self.interact(),
                 KeyCode::Char('d') => self.delete_task(),
@@ -138,10 +137,11 @@ impl TaskListTab {
         if self.task_lists.len() == 0 { return; }
         if self.task_lists[self.selected].tasks.len() == 0 { return; }
 
-        let index = self.task_lists[self.selected].selected;
-        self.task_lists[self.selected].tasks.remove(index);
-        if index == self.task_lists[self.selected].tasks.len() {
-            self.task_lists[self.selected].previous_task();
+        let selected_list = &mut self.task_lists[self.selected];
+
+        selected_list.tasks.remove(index);
+        if index == selected_list.tasks.len() {
+            selected_list.previous_task();
         }
     }
 
@@ -233,24 +233,25 @@ impl Widget for &TaskListTab {
         Span::styled("Duration", THEME.task_title).render(duration_area, buf);
 
         let mut index = 0;
-        for task in &self.task_lists[self.selected].tasks {
+        let selected_list = &self.task_lists[self.selected];
+        for task in &selected_list.tasks {
             if !area.intersects(tasks_inner_area) { break; }
 
             let [mark_area, desc_area, date_area, duration_area] = horizontal.areas(tasks_inner_area);
             Span::styled(
                 format!(
                     "[{}] ",
-                    match self.task_lists[self.selected].tasks[index].status {
+                    match selected_list.tasks[index].status {
                         TaskStatus::NotStarted => ' ',
                         TaskStatus::InProgress => '-',
                         TaskStatus::Finished => 'X',
                     }
                 ),
-                if index == self.task_lists[self.selected].selected {THEME.task_selected} else {THEME.task}
+                if index == selected_list.selected {THEME.task_selected} else {THEME.task}
             ).render(mark_area, buf);
             Span::styled(
                 format!(" {} ", task.name),
-                if index == self.task_lists[self.selected].selected {THEME.task_selected} else {THEME.task}
+                if index == selected_list.selected {THEME.task_selected} else {THEME.task}
             ).render(desc_area, buf);
             Span::from(format!(" {} ", task.date)).render(date_area, buf);
             Span::from(format!(" {} ", task.duration)).render(duration_area, buf);
