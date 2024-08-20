@@ -6,7 +6,7 @@ use ratatui::{
 use crossterm::event::{KeyCode};
 use crate::{
     theme::{THEME},
-    popup::{PopupStatus, NewTaskPopup},
+    popup::{PopupStatus, TaskEditorPopup},
 };
 
 #[derive(Default, Copy, Clone, Debug)]
@@ -54,7 +54,7 @@ impl std::fmt::Display for Date {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub enum TaskStatus {
     #[default]
     NotStarted,
@@ -103,7 +103,7 @@ pub struct TaskListTab {
     pub selected: usize,
     pub task_lists: Vec<TaskList>,
 
-    pub new_task_window: NewTaskPopup,
+    pub new_task_window: TaskEditorPopup,
 }
 
 impl TaskListTab {
@@ -152,11 +152,11 @@ impl TaskListTab {
         }
         */
 
-        self.new_task_window.edit_task(self.task_lists[self.selected].tasks[index].clone());
+        self.new_task_window.edit_task((0,0),self.task_lists[self.selected].tasks[index].clone());
     }
 
     fn new_task(&mut self) {
-        self.new_task_window.new_task();
+        self.new_task_window.new_task((0,0));
         //self.task_lists[self.selected].tasks.push(Task {name: "test".to_string(), status: TaskStatus::NotStarted});
     }
 

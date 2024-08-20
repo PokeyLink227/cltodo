@@ -35,7 +35,7 @@ impl std::fmt::Display for Mode {
 }
 
 #[derive(Default, PartialEq)]
-enum NewTaskField {
+enum TaskEditorField {
     #[default]
     Description,
     Status,
@@ -48,18 +48,19 @@ enum NewTaskField {
 // rename to TaskEditor
 // create method to export/consume new task data
 #[derive(Default)]
-pub struct NewTaskPopup {
+pub struct TaskEditorPopup {
     pub status: PopupStatus,
+    pub location: (usize, usize),
 
     task: Task,
     mode: Mode,
-    selected_field: NewTaskField,
+    selected_field: TaskEditorField,
 }
 
-impl NewTaskPopup {
+impl TaskEditorPopup {
     pub fn handle_input(&mut self, key: KeyCode) {
         match self.selected_field {
-            NewTaskField::Description => match self.mode {
+            TaskEditorField::Description => match self.mode {
                 Mode::Editing => match key {
                     KeyCode::Char(c) => self.task.name.push(c),
                     KeyCode::Backspace => { self.task.name.pop(); },
@@ -68,40 +69,40 @@ impl NewTaskPopup {
                 },
                 Mode::Navigating => match key {
                     KeyCode::Char('e') | KeyCode::Char('/') | KeyCode::Enter => self.mode = Mode::Editing,
-                    KeyCode::Char('j') => self.selected_field = NewTaskField::Cancel,
-                    KeyCode::Char('l') => self.selected_field = NewTaskField::Status,
+                    KeyCode::Char('j') => self.selected_field = TaskEditorField::Cancel,
+                    KeyCode::Char('l') => self.selected_field = TaskEditorField::Status,
                     _ => {},
                 },
             },
-            NewTaskField::Cancel => match key {
+            TaskEditorField::Cancel => match key {
                 KeyCode::Enter | KeyCode::Char('e') => self.status = PopupStatus::Canceled,
-                KeyCode::Char('k') => self.selected_field = NewTaskField::Description,
-                KeyCode::Char('l') => self.selected_field = NewTaskField::Confirm,
+                KeyCode::Char('k') => self.selected_field = TaskEditorField::Description,
+                KeyCode::Char('l') => self.selected_field = TaskEditorField::Confirm,
                 _ => {},
             },
-            NewTaskField::Confirm => match key {
+            TaskEditorField::Confirm => match key {
                 KeyCode::Enter | KeyCode::Char('e') => self.status = PopupStatus::Confirmed,
-                KeyCode::Char('h') => self.selected_field = NewTaskField::Cancel,
-                KeyCode::Char('k') => self.selected_field = NewTaskField::Description,
+                KeyCode::Char('h') => self.selected_field = TaskEditorField::Cancel,
+                KeyCode::Char('k') => self.selected_field = TaskEditorField::Description,
                 _ => {},
             },
-            NewTaskField::Status => match self.mode {
+            TaskEditorField::Status => match self.mode {
                 Mode::Editing => match key {
                     KeyCode::Enter => self.mode = Mode::Editing,
                     _ => {},
                 },
                 Mode::Navigating => match key {
                     KeyCode::Char('e') => self.mode = Mode::Editing,
-                    KeyCode::Char('l') => self.selected_field = NewTaskField::Date,
+                    KeyCode::Char('l') => self.selected_field = TaskEditorField::Date,
                     _ => {},
                 },
             },
-            NewTaskField::Date => match key {
-                KeyCode::Char('l') => self.selected_field = NewTaskField::Duration,
+            TaskEditorField::Date => match key {
+                KeyCode::Char('l') => self.selected_field = TaskEditorField::Duration,
                 _ => {},
             },
-            NewTaskField::Duration => match key {
-                KeyCode::Char('l') => self.selected_field = NewTaskField::Cancel,
+            TaskEditorField::Duration => match key {
+                KeyCode::Char('l') => self.selected_field = TaskEditorField::Cancel,
                 _ => {},
             },
         }
@@ -111,18 +112,21 @@ impl NewTaskPopup {
         std::mem::take(&mut self.task)
     }
 
-    pub fn edit_task(&mut self) {
-
+    pub fn edit_task(&mut self, location: (usize, usize), task: Task) {
+        self.location = location;
+        self.task = task;
+        self.status = PopupStatus::InUse;
     }
 
-    pub fn new_task(&mut self) {
+    pub fn new_task(&mut self, location: (usize, usize)) {
+        self.location = location;
         self.status = PopupStatus::InUse;
-        self.selected_field = NewTaskField::Description;
+        self.selected_field = TaskEditorField::Description;
         self.mode = Mode::Editing;
     }
 }
 
-impl Widget for &NewTaskPopup {
+impl Widget for &TaskEditorPopup {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let vertical = Layout::vertical([5]).flex(Flex::Center);
         let horizontal = Layout::horizontal([60]).flex(Flex::Center);
@@ -150,10 +154,10 @@ impl Widget for &NewTaskPopup {
         ]);
         let [_, cancel_area, quit_area] = bot_horiz.areas(bot_area);
         Paragraph::new(" [Cancel] ")
-            .style(if self.selected_field == NewTaskField::Cancel {THEME.popup_selected} else {THEME.popup})
+            .style(if self.selected_field == TaskEditorField::Cancel {THEME.popup_selected} else {THEME.popup})
             .render(cancel_area, buf);
         Paragraph::new(" [Confirm] ")
-            .style(if self.selected_field == NewTaskField::Confirm {THEME.popup_selected} else {THEME.popup})
+            .style(if self.selected_field == TaskEditorField::Confirm {THEME.popup_selected} else {THEME.popup})
             .render(quit_area, buf);
 
         let mid_horiz = Layout::horizontal([
@@ -164,17 +168,17 @@ impl Widget for &NewTaskPopup {
         let [status_area, date_area, duration_area] = mid_horiz.areas(mid_area);
         Span::styled(
             format!("Status: 0"),
-            if self.selected_field == NewTaskField::Status {THEME.popup_selected} else {THEME.popup}
+            if self.selected_field == TaskEditorField::Status {THEME.popup_selected} else {THEME.popup}
         )
             .render(status_area, buf);
         Span::styled(
             format!("Date: {}", self.task.date),
-            if self.selected_field == NewTaskField::Date {THEME.popup_selected} else {THEME.popup}
+            if self.selected_field == TaskEditorField::Date {THEME.popup_selected} else {THEME.popup}
         )
             .render(date_area, buf);
         Span::styled(
             format!("Dur: {}", self.task.duration),
-            if self.selected_field == NewTaskField::Duration {THEME.popup_selected} else {THEME.popup}
+            if self.selected_field == TaskEditorField::Duration {THEME.popup_selected} else {THEME.popup}
         )
             .render(duration_area, buf);
 
@@ -187,7 +191,7 @@ impl Widget for &NewTaskPopup {
             Span::from("Desc: "),
             Span::from(self.task.name.as_str()),
         ])
-            .style(if self.selected_field == NewTaskField::Description {THEME.popup_selected} else {THEME.popup})
+            .style(if self.selected_field == TaskEditorField::Description {THEME.popup_selected} else {THEME.popup})
             .render(text_area, buf);
 
     }

@@ -233,7 +233,7 @@ fn main() -> io::Result<()> {
                 ]},
                 TaskList {name: "Test1 Long tasklist name".to_string(), selected: 0, tasks: Vec::new()},
             ],
-            new_task_window: NewTaskPopup::default(),
+            new_task_window: TaskEditorPopup::default(),
         },
         calender_tab: CalenderTab {},
         options_tab: OptionsTab {},
