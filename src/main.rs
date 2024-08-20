@@ -153,51 +153,29 @@ impl App {
         so render common followed by specific controls.
     */
     fn render_bottom_bar(&self, area: Rect, buf: &mut Buffer) {
-        let keys = [
+        let common_keys: [(&'static str, &'static str); 4] = [
             ("Q/Esc", "Quit"),
             ("Tab", "Switch Tab"),
             ("J", "Down"),
             ("K", "Up"),
         ];
 
-        let spans: Vec<Span> = keys
-            .iter()
+        let other_keys = match self.current_tab {
+            Tab::TaskList => self.task_list_tab.controls.iter(),
+            _ => [].iter(),
+        };
+
+        let spans: Vec<Span> = [common_keys.iter(), other_keys]
+            .into_iter()
+            .flatten()
             .flat_map(|(key, desc)| {
                 let key = Span::from(format!(" {key} ")).style(THEME.key_bind);
                 let desc = Span::from(format!(" {desc} ")).style(THEME.key_desc);
                 [key, desc]
             })
             .collect();
-
-        let main_controls = Line::from(spans);
-
-         match self.current_tab {
-            Tab::TaskList => {
-                let sub_spans: Vec<Span> = self.task_list_tab.controls
-                    .iter()
-                    .flat_map(|(key, desc)| {
-                        let key = Span::from(format!(" {key} ")).style(THEME.key_bind);
-                        let desc = Span::from(format!(" {desc} ")).style(THEME.key_desc);
-                        [key, desc]
-                    })
-                    .collect();
-                let sub_controls = Line::from(sub_spans);
-
-                let horizontal = Layout::horizontal([
-                    Constraint::Length(main_controls.width() as u16),
-                    Constraint::Length(sub_controls.width() as u16),
-                ]).flex(Flex::Center);
-                let [main_area, sub_area] = horizontal.areas(area);
-
-                main_controls.render(main_area, buf);
-                sub_controls.render(sub_area, buf);
-            },
-            _ => {
-                main_controls.centered().render(area, buf);
-            },
-        }
+        Line::from(spans).centered().render(area, buf);
     }
-
 }
 
 fn main() -> io::Result<()> {
