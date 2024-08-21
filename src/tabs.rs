@@ -87,22 +87,12 @@ pub struct TaskList {
 impl TaskList {
     fn next_task(&mut self) {
         if self.tasks.is_empty() { return; }
-
-        if self.selected + 1 == self.tasks.len() {
-            self.selected = 0;
-        } else {
-            self.selected += 1;
-        }
+        self.selected = (self.selected + 1) % self.tasks.len();
     }
 
     fn previous_task(&mut self) {
         if self.tasks.is_empty() { return; }
-
-        if self.selected == 0 {
-            self.selected = self.tasks.len() - 1;
-        } else {
-            self.selected -= 1;
-        }
+        self.selected = (self.selected + self.tasks.len() - 1) % self.tasks.len();
     }
 }
 
@@ -168,22 +158,12 @@ impl TaskListTab {
 
     fn next_tab(&mut self) {
         if self.task_lists.is_empty() { return; }
-
-        if self.selected + 1 == self.task_lists.len() {
-            self.selected = 0;
-        } else {
-            self.selected += 1;
-        }
+        self.selected = (self.selected + 1) % self.task_lists.len();
     }
 
     fn previous_tab(&mut self) {
         if self.task_lists.is_empty() { return; }
-
-        if self.selected == 0 {
-            self.selected = self.task_lists.len() - 1;
-        } else {
-            self.selected -= 1;
-        }
+        self.selected = (self.selected + self.task_lists.len() - 1) % self.task_lists.len();
     }
 }
 
