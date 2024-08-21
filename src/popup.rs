@@ -66,7 +66,7 @@ pub struct TaskEditorPopup {
 }
 
 impl TaskEditorPopup {
-    pub fn handle_input(&mut self, key: KeyCode) -> Option<KeyCode> {
+    pub fn handle_input(&mut self, key: KeyCode) -> bool {
 
         if key == KeyCode::Esc {
             self.status = PopupStatus::Closed;
@@ -77,45 +77,45 @@ impl TaskEditorPopup {
                 KeyCode::Char(c) => self.task.name.push(c),
                 KeyCode::Backspace => { self.task.name.pop(); },
                 KeyCode::Enter => self.mode = Mode::Navigating,
-                _ => return Some(key),
+                _ => return false,
             },
             (TaskEditorField::Description, Mode::Navigating) => match key {
                 KeyCode::Char('e' | '/') | KeyCode::Enter => self.mode = Mode::Editing,
                 KeyCode::Char('j') => self.selected_field = TaskEditorField::Status,
                 KeyCode::Char('l') => self.selected_field = TaskEditorField::Confirm,
-                _ => return Some(key),
+                _ => return false,
             },
             (TaskEditorField::Cancel, _) => match key {
                 KeyCode::Enter | KeyCode::Char('e') => self.status = PopupStatus::Canceled,
                 KeyCode::Char('k') => self.selected_field = TaskEditorField::Duration,
                 KeyCode::Char('l') => self.selected_field = TaskEditorField::Confirm,
                 KeyCode::Char('h') => self.selected_field = TaskEditorField::Duration,
-                _ => return Some(key),
+                _ => return false,
             },
             (TaskEditorField::Confirm, _) => match key {
                 KeyCode::Enter | KeyCode::Char('e') => self.status = PopupStatus::Confirmed,
                 KeyCode::Char('h') => self.selected_field = TaskEditorField::Cancel,
                 KeyCode::Char('k') => self.selected_field = TaskEditorField::Description,
-                _ => return Some(key),
+                _ => return false,
             },
             (TaskEditorField::Status, Mode::Editing) => match key {
                 KeyCode::Enter => self.mode = Mode::Navigating,
                 KeyCode::Char('1') => self.task.status = TaskStatus::NotStarted,
                 KeyCode::Char('2') => self.task.status = TaskStatus::InProgress,
                 KeyCode::Char('3') => self.task.status = TaskStatus::Finished,
-                _ => return Some(key),
+                _ => return false,
             },
             (TaskEditorField::Status, Mode::Navigating) => match key {
                 KeyCode::Enter | KeyCode::Char('e') => self.mode = Mode::Editing,
                 KeyCode::Char('j') => self.selected_field = TaskEditorField::Cancel,
                 KeyCode::Char('k') => self.selected_field = TaskEditorField::Description,
                 KeyCode::Char('l') => self.selected_field = TaskEditorField::Date,
-                _ => return Some(key),
+                _ => return false,
             },
             (TaskEditorField::Date, Mode::Editing) => match key {
                 KeyCode::Enter => self.mode = Mode::Navigating,
                 KeyCode::Char(c) if c >= '0' && c <= '9' => {},
-                _ => return Some(key),
+                _ => return false,
             },
             (TaskEditorField::Date, Mode::Navigating) => match key {
                 KeyCode::Enter | KeyCode::Char('e') => self.mode = Mode::Editing,
@@ -123,18 +123,18 @@ impl TaskEditorPopup {
                 KeyCode::Char('j') => self.selected_field = TaskEditorField::Cancel,
                 KeyCode::Char('k') => self.selected_field = TaskEditorField::Description,
                 KeyCode::Char('l') => self.selected_field = TaskEditorField::Duration,
-                _ => return Some(key),
+                _ => return false,
             },
             (TaskEditorField::Duration, _) => match key {
                 KeyCode::Char('h') => self.selected_field = TaskEditorField::Date,
                 KeyCode::Char('j') => self.selected_field = TaskEditorField::Cancel,
                 KeyCode::Char('k') => self.selected_field = TaskEditorField::Description,
                 KeyCode::Char('l') => self.selected_field = TaskEditorField::Cancel,
-                _ => return Some(key),
+                _ => return false,
             },
         }
 
-        None
+        true
     }
 
     pub fn take_task(&mut self) -> Task {

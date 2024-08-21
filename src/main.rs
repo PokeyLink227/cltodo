@@ -91,11 +91,13 @@ impl App {
         if event::poll(std::time::Duration::from_millis(16))? {
             if let event::Event::Key(key) = event::read()? {
                 if key.kind == event::KeyEventKind::Press {
-                    match key.code {
-                        KeyCode::Char('q') => self.mode = RunningMode::Exiting,
-                        KeyCode::Tab => self.next_tab(),
-                        KeyCode::BackTab => self.previous_tab(),
-                        _ => self.dispatch_input(key.code),
+                    if !self.dispatch_input(key.code) {
+                        match key.code {
+                            KeyCode::Char('q') => self.mode = RunningMode::Exiting,
+                            KeyCode::Tab => self.next_tab(),
+                            KeyCode::BackTab => self.previous_tab(),
+                            _ => {},
+                        }
                     }
                 }
             }
@@ -103,7 +105,7 @@ impl App {
         Ok(())
     }
 
-    fn dispatch_input(&mut self, key: KeyCode) {
+    fn dispatch_input(&mut self, key: KeyCode) -> bool {
         match self.current_tab {
             Tab::TaskList => self.task_list_tab.handle_input(key),
             Tab::Calender => self.calender_tab.handle_input(key),

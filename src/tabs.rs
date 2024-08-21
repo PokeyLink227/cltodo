@@ -115,11 +115,12 @@ pub struct TaskListTab {
 }
 
 impl TaskListTab {
-    pub fn handle_input(&mut self, key: KeyCode) {
+    pub fn handle_input(&mut self, key: KeyCode) -> bool {
         let selected_list = &mut self.task_lists[self.selected];
+        let mut consumed_input: bool = false;
 
         if PopupStatus::InUse == self.new_task_window.status {
-            self.new_task_window.handle_input(key);
+            consumed_input = self.new_task_window.handle_input(key);
             if PopupStatus::Confirmed == self.new_task_window.status {
                 match self.new_task_window.task_source {
                     TaskSource::New => selected_list.tasks.push(self.new_task_window.take_task()),
@@ -127,7 +128,8 @@ impl TaskListTab {
                 }
                 self.new_task_window.status = PopupStatus::Closed;
             }
-        } else {
+        }
+        if !consumed_input {
             match key {
                 KeyCode::Char('h') => self.previous_tab(),
                 KeyCode::Char('l') => self.next_tab(),
@@ -136,9 +138,11 @@ impl TaskListTab {
                 KeyCode::Char('a') => self.new_task(),
                 KeyCode::Char('e') => self.interact(),
                 KeyCode::Char('d') => self.delete_task(),
-                _ => {},
+                _ => return false,
             }
         }
+
+        true
     }
 
     fn delete_task(&mut self) {
@@ -266,7 +270,8 @@ pub struct CalenderTab {
 }
 
 impl CalenderTab {
-    pub fn handle_input(&mut self, key: KeyCode) {
+    pub fn handle_input(&mut self, key: KeyCode) -> bool {
+        false
     }
 }
 
@@ -280,7 +285,8 @@ pub struct OptionsTab {
 }
 
 impl OptionsTab {
-    pub fn handle_input(&mut self, key: KeyCode) {
+    pub fn handle_input(&mut self, key: KeyCode) -> bool {
+        false
     }
 }
 
@@ -294,7 +300,8 @@ pub struct ProfileTab {
 }
 
 impl ProfileTab {
-    pub fn handle_input(&mut self, key: KeyCode) {
+    pub fn handle_input(&mut self, key: KeyCode) -> bool {
+        false
     }
 }
 
