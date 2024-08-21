@@ -18,7 +18,11 @@ pub struct Duration {
 
 impl std::fmt::Display for Duration {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:02}:{:02}:{:02}", self.days, self.hours, self.minutes)
+        if self.days == 0 && self.hours == 0 && self.minutes == 0 {
+            write!(f, "   --   ")
+        } else {
+            write!(f, "{:02}:{:02}:{:02}", self.days, self.hours, self.minutes)
+        }
     }
 }
 
@@ -31,26 +35,30 @@ pub struct Date {
 
 impl std::fmt::Display for Date {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{} {:02}",
-            match self.month {
-                1  => "Jan",
-                2  => "Feb",
-                3  => "Mar",
-                4  => "Apr",
-                5  => "May",
-                6  => "Jun",
-                7  => "Jul",
-                8  => "Aug",
-                9  => "Sep",
-                10 => "Oct",
-                11 => "Nov",
-                12 => "Dec",
-                _  => "ERR",
-            },
-            self.day,
-        )
+        if self.month == 0 && self.day == 0 {
+            write!(f, "  --  ")
+        } else {
+            write!(
+                f,
+                "{} {:02}",
+                match self.month {
+                    1  => "Jan",
+                    2  => "Feb",
+                    3  => "Mar",
+                    4  => "Apr",
+                    5  => "May",
+                    6  => "Jun",
+                    7  => "Jul",
+                    8  => "Aug",
+                    9  => "Sep",
+                    10 => "Oct",
+                    11 => "Nov",
+                    12 => "Dec",
+                    _  => "ERR",
+                },
+                self.day,
+            )
+        }
     }
 }
 
@@ -114,8 +122,8 @@ impl TaskListTab {
             self.new_task_window.handle_input(key);
             if PopupStatus::Confirmed == self.new_task_window.status {
                 match self.new_task_window.task_source {
-                    TaskSource::NewTask => selected_list.tasks.push(self.new_task_window.take_task()),
-                    TaskSource::ExistingTask => selected_list.tasks[selected_list.selected] = self.new_task_window.take_task(),
+                    TaskSource::New => selected_list.tasks.push(self.new_task_window.take_task()),
+                    TaskSource::Existing => selected_list.tasks[selected_list.selected] = self.new_task_window.take_task(),
                 }
                 self.new_task_window.status = PopupStatus::Closed;
             }

@@ -92,7 +92,7 @@ impl App {
             if let event::Event::Key(key) = event::read()? {
                 if key.kind == event::KeyEventKind::Press {
                     match key.code {
-                        KeyCode::Char('q') | KeyCode::Esc => self.mode = RunningMode::Exiting,
+                        KeyCode::Char('q') => self.mode = RunningMode::Exiting,
                         KeyCode::Tab => self.next_tab(),
                         KeyCode::BackTab => self.previous_tab(),
                         _ => self.dispatch_input(key.code),
@@ -160,12 +160,12 @@ impl App {
             ("K", "Up"),
         ];
 
-        let other_keys = match self.current_tab {
+        let other_keys_iter = match self.current_tab {
             Tab::TaskList => self.task_list_tab.controls.iter(),
             _ => [].iter(),
         };
 
-        let spans: Vec<Span> = [common_keys.iter(), other_keys]
+        let spans: Vec<Span> = [common_keys.iter(), other_keys_iter]
             .into_iter()
             .flatten()
             .flat_map(|(key, desc)| {
@@ -174,6 +174,7 @@ impl App {
                 [key, desc]
             })
             .collect();
+
         Line::from(spans).centered().render(area, buf);
     }
 }
