@@ -1,15 +1,18 @@
+use std::fs::File;
+use std::io::prelude::*;
 use ratatui::{
     prelude::*,
     widgets::*,
     layout::{Offset},
 };
 use crossterm::event::{KeyCode};
+use serde::{Deserialize, Serialize};
 use crate::{
     theme::{THEME},
     popup::{PopupStatus, TaskEditorPopup, TaskSource},
 };
 
-#[derive(Default, Copy, Clone, Debug)]
+#[derive(Default, Copy, Clone, Debug, Deserialize, Serialize)]
 pub struct Duration {
     pub days: u16,
     pub hours: u8,
@@ -26,7 +29,7 @@ impl std::fmt::Display for Duration {
     }
 }
 
-#[derive(Default, Copy, Clone, Debug)]
+#[derive(Default, Copy, Clone, Debug, Deserialize, Serialize)]
 pub struct Date {
     //pub year: u16,
     pub month: u8,
@@ -62,7 +65,7 @@ impl std::fmt::Display for Date {
     }
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Deserialize, Serialize)]
 pub enum TaskStatus {
     #[default]
     NotStarted,
@@ -70,7 +73,7 @@ pub enum TaskStatus {
     Finished,
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Deserialize, Serialize)]
 pub struct Task {
     pub name: String,
     pub status: TaskStatus,
@@ -78,6 +81,7 @@ pub struct Task {
     pub date: Date,
 }
 
+#[derive(Deserialize, Serialize)]
 pub struct TaskList {
     pub name: String,
     pub selected: usize,
@@ -107,10 +111,10 @@ pub struct TaskListTab {
 impl TaskListTab {
     pub fn handle_input(&mut self, key: KeyCode) -> bool {
         let selected_list = &mut self.task_lists[self.selected];
-        let mut consumed_input: bool = false;
 
         if PopupStatus::InUse == self.new_task_window.status {
-            consumed_input = self.new_task_window.handle_input(key);
+            self.new_task_window.handle_input(key);
+            // recheck status so new task can be added on the same frame
             if PopupStatus::Confirmed == self.new_task_window.status {
                 match self.new_task_window.task_source {
                     TaskSource::New => selected_list.tasks.push(self.new_task_window.take_task()),
@@ -118,8 +122,7 @@ impl TaskListTab {
                 }
                 self.new_task_window.status = PopupStatus::Closed;
             }
-        }
-        if !consumed_input {
+        } else {
             match key {
                 KeyCode::Char('h') => self.previous_tab(),
                 KeyCode::Char('l') => self.next_tab(),
@@ -128,11 +131,26 @@ impl TaskListTab {
                 KeyCode::Char('a') => self.new_task(),
                 KeyCode::Char('e') => self.interact(),
                 KeyCode::Char('d') => self.delete_task(),
+                KeyCode::Char('s') => self.save_data(),
+                KeyCode::Char('S') => self.load_data(),
                 _ => return false,
             }
         }
 
         true
+    }
+
+    fn load_data(&mut self) {
+        let mut file = File::open("test.txt").unwrap();
+        let mut data = vec![];
+        file.read_to_end(&mut data).unwrap();
+        self.task_lists = postcard::from_bytes(&data).unwrap();
+    }
+
+    fn save_data(&mut self) {
+        let mut file = File::create("test.txt").unwrap();
+        let out = postcard::to_stdvec(&self.task_lists).unwrap();
+        file.write_all(&out).unwrap();
     }
 
     fn delete_task(&mut self) {
