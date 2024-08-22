@@ -103,14 +103,13 @@ impl TaskList {
 pub struct TaskListTab {
     pub controls: [(&'static str, &'static str); 3],
     pub selected: usize,
-    pub task_lists: Vec<TaskList>,
 
     pub new_task_window: TaskEditorPopup,
 }
 
 impl TaskListTab {
-    pub fn handle_input(&mut self, key: KeyCode) -> bool {
-        let selected_list = &mut self.task_lists[self.selected];
+    pub fn handle_input(&mut self, task_lists: &mut Vec<TaskList>, key: KeyCode) -> bool {
+        let selected_list = &mut task_lists[self.selected];
 
         if PopupStatus::InUse == self.new_task_window.status {
             self.new_task_window.handle_input(key);
@@ -124,15 +123,15 @@ impl TaskListTab {
             }
         } else {
             match key {
-                KeyCode::Char('h') => self.previous_tab(),
-                KeyCode::Char('l') => self.next_tab(),
+                KeyCode::Char('h') => self.previous_tab(task_lists),
+                KeyCode::Char('l') => self.next_tab(task_lists),
                 KeyCode::Char('k') => selected_list.previous_task(),
                 KeyCode::Char('j') => selected_list.next_task(),
                 KeyCode::Char('a') => self.new_task(),
-                KeyCode::Char('e') => self.interact(),
-                KeyCode::Char('d') => self.delete_task(),
-                KeyCode::Char('s') => self.save_data(),
-                KeyCode::Char('S') => self.load_data(),
+                KeyCode::Char('e') => self.interact(task_lists),
+                KeyCode::Char('d') => self.delete_task(task_lists),
+                KeyCode::Char('s') => self.save_data(task_lists),
+                KeyCode::Char('S') => self.load_data(task_lists),
                 _ => return false,
             }
         }
@@ -140,33 +139,34 @@ impl TaskListTab {
         true
     }
 
-    fn load_data(&mut self) {
+    fn load_data(&mut self, task_lists: &mut Vec<TaskList>) {
         let mut file = File::open("test.txt").unwrap();
         let mut data = vec![];
         file.read_to_end(&mut data).unwrap();
-        self.task_lists = serde_json::from_slice(&data).unwrap();
+        let temp: Vec<TaskList> = serde_json::from_slice(&data).unwrap();
+        *task_lists = temp;
     }
 
-    fn save_data(&mut self) {
+    fn save_data(&mut self, task_lists: &mut Vec<TaskList>) {
         let mut file = File::create("test.txt").unwrap();
-        let out = serde_json::to_vec(&self.task_lists).unwrap();
+        let out = serde_json::to_vec(&task_lists).unwrap();
         file.write_all(&out).unwrap();
     }
 
-    fn delete_task(&mut self) {
-        if self.task_lists.is_empty() || self.task_lists[self.selected].tasks.is_empty() { return; }
+    fn delete_task(&mut self, task_lists: &mut Vec<TaskList>) {
+        if task_lists.is_empty() || task_lists[self.selected].tasks.is_empty() { return; }
 
-        let selected_list = &mut self.task_lists[self.selected];
+        let selected_list = &mut task_lists[self.selected];
         selected_list.tasks.remove(selected_list.selected);
         if selected_list.selected == selected_list.tasks.len() {
             selected_list.previous_task();
         }
     }
 
-    fn interact(&mut self) {
-        if self.task_lists.is_empty() || self.task_lists[self.selected].tasks.is_empty() { return; }
+    fn interact(&mut self, task_lists: &mut Vec<TaskList>) {
+        if task_lists.is_empty() || task_lists[self.selected].tasks.is_empty() { return; }
 
-        let selected_list = &self.task_lists[self.selected];
+        let selected_list = &task_lists[self.selected];
         self.new_task_window.edit_task(selected_list.tasks[selected_list.selected].clone());
     }
 
@@ -174,19 +174,17 @@ impl TaskListTab {
         self.new_task_window.new_task();
     }
 
-    fn next_tab(&mut self) {
-        if self.task_lists.is_empty() { return; }
-        self.selected = (self.selected + 1) % self.task_lists.len();
+    fn next_tab(&mut self, task_lists: &mut Vec<TaskList>) {
+        if task_lists.is_empty() { return; }
+        self.selected = (self.selected + 1) % task_lists.len();
     }
 
-    fn previous_tab(&mut self) {
-        if self.task_lists.is_empty() { return; }
-        self.selected = (self.selected + self.task_lists.len() - 1) % self.task_lists.len();
+    fn previous_tab(&mut self, task_lists: &mut Vec<TaskList>) {
+        if task_lists.is_empty() { return; }
+        self.selected = (self.selected + task_lists.len() - 1) % task_lists.len();
     }
-}
 
-impl Widget for &TaskListTab {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+    pub fn render(&self, area: Rect, buf: &mut Buffer, task_lists: &Vec<TaskList>) {
         let vertical = Layout::vertical([
             Constraint::Length(1),
             Constraint::Min(0),
@@ -194,11 +192,11 @@ impl Widget for &TaskListTab {
         let [task_bar, tasks_area] = vertical.areas(area);
 
         // Task Bar Rendering
-        let mut spans: Vec<Span> = Vec::with_capacity(self.task_lists.len() + 1);
+        let mut spans: Vec<Span> = Vec::with_capacity(task_lists.len() + 1);
         let mut highlight_pos: Rect = Rect {x: tasks_area.x + 11, y: tasks_area.y, width: 0, height: 1}; // 11 is length of "Task Lists:"
         spans.push(Span::from("Task Lists:"));
 
-        for (i, list) in self.task_lists.iter().enumerate() {
+        for (i, list) in task_lists.iter().enumerate() {
             if highlight_pos.width == 0 {
                 if i == self.selected { highlight_pos.width = list.name.len() as u16 + 2; }
                 else  {highlight_pos.x += list.name.len() as u16 + 2; }
@@ -230,7 +228,7 @@ impl Widget for &TaskListTab {
         Span::styled("Date", THEME.task_title).render(date_area, buf);
         Span::styled("Duration", THEME.task_title).render(duration_area, buf);
 
-        let selected_list = &self.task_lists[self.selected];
+        let selected_list = &task_lists[self.selected];
         for (index, task) in selected_list.tasks.iter().enumerate() {
             if !area.intersects(tasks_inner_area) { break; }
 

@@ -45,6 +45,8 @@ pub struct App {
     mode: RunningMode,
     current_tab: Tab,
 
+    task_lists: Vec<TaskList>,
+
     task_list_tab: TaskListTab,
     calender_tab: CalenderTab,
     options_tab: OptionsTab,
@@ -64,7 +66,7 @@ impl Widget for &App {
 
         self.render_title_bar(title_bar, buf);
         match self.current_tab {
-            Tab::TaskList => self.task_list_tab.render(canvas, buf),
+            Tab::TaskList => self.task_list_tab.render(canvas, buf, &self.task_lists),
             Tab::Calender => self.calender_tab.render(canvas, buf),
             Tab::Options => self.options_tab.render(canvas, buf),
             Tab::Profile => self.profile_tab.render(canvas, buf),
@@ -108,7 +110,7 @@ impl App {
 
     fn dispatch_input(&mut self, key: KeyCode) -> bool {
         match self.current_tab {
-            Tab::TaskList => self.task_list_tab.handle_input(key),
+            Tab::TaskList => self.task_list_tab.handle_input(&mut self.task_lists, key),
             Tab::Calender => self.calender_tab.handle_input(key),
             Tab::Options => self.options_tab.handle_input(key),
             Tab::Profile => self.profile_tab.handle_input(key),
@@ -187,6 +189,26 @@ fn main() -> io::Result<()> {
     let mut app = App {
         mode: RunningMode::Running,
         current_tab: Tab::TaskList,
+        task_lists: vec![
+            TaskList {name: "cl-todo stuff".to_string(), selected: 0, tasks: vec![
+                Task {name: "dynamic keybinds bar".to_string(), status: TaskStatus::InProgress, duration: Duration::default(), date: Date {month: 1, day: 15}},
+                Task {name: "add background to popup".to_string(), status: TaskStatus::Finished, duration: Duration::default(), date: Date {month: 7, day: 8}},
+                Task {name: "reduce rendering time (might use memoization from layout)".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
+                Task {name: "read/write to file to save list data".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
+                Task {name: "make dropdown lists for the popup".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
+                Task {name: "Improve navigation and allowing child windows to capture inputs".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
+                Task {name: "Task editing".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
+                Task {name: "add notes section to tasks?".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
+                Task {name: "add sorting options to task lists".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
+                Task {name: "add bar highlighting under selected tab instead of connecting to tab".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
+                Task {name: "add background and possible expansion to tasks".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
+                Task {name: "move column names to border bar (remove highlighting?)".to_string(), status: TaskStatus::Finished, duration: Duration::default(), date: Date::default()},
+                Task {name: "make background coloring better".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
+                Task {name: "fix imputs escaping current window (not fix but make work better)".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
+                Task {name: "bug where switching list while in new task dialogue adds to that list and sometimes crashes".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
+            ]},
+            TaskList {name: "Test1 Long tasklist name".to_string(), selected: 0, tasks: Vec::new()},
+        ],
         task_list_tab: TaskListTab {
             controls: [
                 ("H", "Prev. List"),
@@ -194,26 +216,6 @@ fn main() -> io::Result<()> {
                 ("E", "Interact"),
             ],
             selected: 0,
-            task_lists: vec![
-                TaskList {name: "cl-todo stuff".to_string(), selected: 0, tasks: vec![
-                    Task {name: "dynamic keybinds bar".to_string(), status: TaskStatus::InProgress, duration: Duration::default(), date: Date {month: 1, day: 15}},
-                    Task {name: "add background to popup".to_string(), status: TaskStatus::Finished, duration: Duration::default(), date: Date {month: 7, day: 8}},
-                    Task {name: "reduce rendering time (might use memoization from layout)".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
-                    Task {name: "read/write to file to save list data".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
-                    Task {name: "make dropdown lists for the popup".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
-                    Task {name: "Improve navigation and allowing child windows to capture inputs".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
-                    Task {name: "Task editing".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
-                    Task {name: "add notes section to tasks?".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
-                    Task {name: "add sorting options to task lists".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
-                    Task {name: "add bar highlighting under selected tab instead of connecting to tab".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
-                    Task {name: "add background and possible expansion to tasks".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
-                    Task {name: "move column names to border bar (remove highlighting?)".to_string(), status: TaskStatus::Finished, duration: Duration::default(), date: Date::default()},
-                    Task {name: "make background coloring better".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
-                    Task {name: "fix imputs escaping current window (not fix but make work better)".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
-                    Task {name: "bug where switching list while in new task dialogue adds to that list and sometimes crashes".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
-                ]},
-                TaskList {name: "Test1 Long tasklist name".to_string(), selected: 0, tasks: Vec::new()},
-            ],
             new_task_window: TaskEditorPopup::default(),
         },
         calender_tab: CalenderTab {},
