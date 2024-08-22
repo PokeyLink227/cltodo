@@ -144,12 +144,12 @@ impl TaskListTab {
         let mut file = File::open("test.txt").unwrap();
         let mut data = vec![];
         file.read_to_end(&mut data).unwrap();
-        self.task_lists = postcard::from_bytes(&data).unwrap();
+        self.task_lists = serde_json::from_slice(&data).unwrap();
     }
 
     fn save_data(&mut self) {
         let mut file = File::create("test.txt").unwrap();
-        let out = postcard::to_stdvec(&self.task_lists).unwrap();
+        let out = serde_json::to_vec(&self.task_lists).unwrap();
         file.write_all(&out).unwrap();
     }
 
