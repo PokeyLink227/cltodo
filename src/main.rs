@@ -90,6 +90,7 @@ impl App {
     fn handle_events(&mut self) -> io::Result<()> {
         if event::poll(std::time::Duration::from_millis(16))? {
             if let event::Event::Key(key) = event::read()? {
+                // key holds info about modifiers (shitf, ctrl, alt)
                 if key.kind == event::KeyEventKind::Press {
                     if !self.dispatch_input(key.code) {
                         match key.code {
@@ -208,6 +209,8 @@ fn main() -> io::Result<()> {
                     Task {name: "add background and possible expansion to tasks".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
                     Task {name: "move column names to border bar (remove highlighting?)".to_string(), status: TaskStatus::Finished, duration: Duration::default(), date: Date::default()},
                     Task {name: "make background coloring better".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
+                    Task {name: "fix imputs escaping current window (not fix but make work better)".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
+                    Task {name: "bug where switching list while in new task dialogue adds to that list and sometimes crashes".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: Date::default()},
                 ]},
                 TaskList {name: "Test1 Long tasklist name".to_string(), selected: 0, tasks: Vec::new()},
             ],
