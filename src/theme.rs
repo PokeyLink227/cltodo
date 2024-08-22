@@ -20,7 +20,7 @@ pub const THEME: Theme = Theme {
     popup: Style::new().fg(WHITE).bg(DARKER_GRAY),
     popup_focused: Style::new().fg(WHITE).bg(DARK_GRAY),
     popup_selected: Style::new().fg(YELLOW).bg(DARK_GRAY),
-    task: Style::new(),
+    task: Style::new().fg(WHITE),
     task_selected: Style::new().fg(YELLOW),
     task_border: Style::new().fg(DARK_GRAY),
     task_title: Style::new().fg(GRAY),

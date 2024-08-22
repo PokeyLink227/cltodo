@@ -46,6 +46,8 @@ pub struct App {
     current_tab: Tab,
 
     task_lists: Vec<TaskList>,
+    profile: UserProfile,
+    options: Options,
 
     task_list_tab: TaskListTab,
     calender_tab: CalenderTab,
@@ -68,8 +70,8 @@ impl Widget for &App {
         match self.current_tab {
             Tab::TaskList => self.task_list_tab.render(canvas, buf, &self.task_lists),
             Tab::Calender => self.calender_tab.render(canvas, buf),
-            Tab::Options => self.options_tab.render(canvas, buf),
-            Tab::Profile => self.profile_tab.render(canvas, buf),
+            Tab::Options => self.options_tab.render(canvas, buf, &self.options),
+            Tab::Profile => self.profile_tab.render(canvas, buf, &self.profile),
         }
         self.render_bottom_bar(bottom_bar, buf);
     }
@@ -158,11 +160,9 @@ impl App {
         so render common followed by specific controls.
     */
     fn render_bottom_bar(&self, area: Rect, buf: &mut Buffer) {
-        let common_keys: [(&'static str, &'static str); 4] = [
-            ("Q/Esc", "Quit"),
+        let common_keys: [(&'static str, &'static str); 2] = [
+            ("Q", "Quit"),
             ("Tab", "Switch Tab"),
-            ("J", "Down"),
-            ("K", "Up"),
         ];
 
         let other_keys_iter = match self.current_tab {
@@ -209,8 +209,16 @@ fn main() -> io::Result<()> {
             ]},
             TaskList {name: "Test1 Long tasklist name".to_string(), selected: 0, tasks: Vec::new()},
         ],
+        profile: UserProfile {
+            name: "Thomas".to_string(),
+        },
+        options: Options {
+            delete_on_completion: false,
+        },
         task_list_tab: TaskListTab {
             controls: [
+                ("J", "Down"),
+                ("K", "Up"),
                 ("H", "Prev. List"),
                 ("L", "Next List"),
                 ("E", "Interact"),

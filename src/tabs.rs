@@ -101,7 +101,7 @@ impl TaskList {
 }
 
 pub struct TaskListTab {
-    pub controls: [(&'static str, &'static str); 3],
+    pub controls: [(&'static str, &'static str); 5],
     pub selected: usize,
 
     pub new_task_window: TaskEditorPopup,
@@ -110,9 +110,10 @@ pub struct TaskListTab {
 impl TaskListTab {
     pub fn handle_input(&mut self, task_lists: &mut Vec<TaskList>, key: KeyCode) -> bool {
         let selected_list = &mut task_lists[self.selected];
+        let mut input_captured = true;
 
         if PopupStatus::InUse == self.new_task_window.status {
-            self.new_task_window.handle_input(key);
+            input_captured = self.new_task_window.handle_input(key);
             // recheck status so new task can be added on the same frame
             if PopupStatus::Confirmed == self.new_task_window.status {
                 match self.new_task_window.task_source {
@@ -132,11 +133,11 @@ impl TaskListTab {
                 KeyCode::Char('d') => self.delete_task(task_lists),
                 KeyCode::Char('s') => self.save_data(task_lists),
                 KeyCode::Char('S') => self.load_data(task_lists),
-                _ => return false,
+                _ => input_captured = false,
             }
         }
 
-        true
+        input_captured
     }
 
     fn load_data(&mut self, task_lists: &mut Vec<TaskList>) {
@@ -222,7 +223,12 @@ impl TaskListTab {
         let mut tasks_inner_area = tasks_border.inner(tasks_area);
 
         tasks_border.render(tasks_area, buf);
-        Block::bordered().style(THEME.task_selected).borders(Borders::TOP).border_type(BorderType::Thick).render(highlight_pos, buf);
+        // Render highlight bar
+        Block::bordered()
+            .style(THEME.task_selected)
+            .borders(Borders::TOP)
+            .border_type(BorderType::Thick)
+            .render(highlight_pos, buf);
 
         let [_, _, date_area, duration_area] = horizontal.areas(tasks_area);
         Span::styled("Date", THEME.task_title).render(date_area, buf);
@@ -269,40 +275,56 @@ impl CalenderTab {
     pub fn handle_input(&mut self, key: KeyCode) -> bool {
         false
     }
-}
 
-impl Widget for &CalenderTab {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+    pub fn render(&self, area: Rect, buf: &mut Buffer) {
         Paragraph::new("cal tab test").render(area, buf);
     }
 }
 
+pub struct Options {
+    pub delete_on_completion: bool,
+}
+
 pub struct OptionsTab {
+
 }
 
 impl OptionsTab {
     pub fn handle_input(&mut self, key: KeyCode) -> bool {
         false
     }
-}
 
-impl Widget for &OptionsTab {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        Paragraph::new("options tab test").render(area, buf);
+    pub fn render(&self, area: Rect, buf: &mut Buffer, options: &Options) {
+        let border = Block::bordered()
+            .border_type(BorderType::Thick)
+            .style(THEME.task_border);
+        Paragraph::new(
+            format!(
+                "[{}] Delete task on completion",
+                if options.delete_on_completion {'Y'} else {'N'}
+            )
+        )
+            .style(THEME.task)
+            .block(border)
+            .render(area, buf);
     }
 }
 
+#[derive(Debug)]
+pub struct UserProfile {
+    pub name: String,
+}
+
 pub struct ProfileTab {
+
 }
 
 impl ProfileTab {
     pub fn handle_input(&mut self, key: KeyCode) -> bool {
         false
     }
-}
 
-impl Widget for &ProfileTab {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        Paragraph::new("options tab test").render(area, buf);
+    pub fn render(&self, area: Rect, buf: &mut Buffer, profile: &UserProfile) {
+        Paragraph::new(format!("current_profile: {:?}", profile)).render(area, buf);
     }
 }
