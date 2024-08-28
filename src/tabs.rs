@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     theme::{THEME},
     popup::{PopupStatus, TaskEditorPopup, TaskSource},
+    widgets::{Calendar},
 };
 
 #[derive(Default, Copy, Clone, Debug, Deserialize, Serialize)]
@@ -267,17 +268,39 @@ impl TaskListTab {
     }
 }
 
-pub struct CalenderTab {
-
+#[derive(Default)]
+pub struct CalendarTab {
+    pub cal: Calendar,
 }
 
-impl CalenderTab {
+impl CalendarTab {
     pub fn handle_input(&mut self, key: KeyCode) -> bool {
         false
     }
 
     pub fn render(&self, area: Rect, buf: &mut Buffer) {
-        Paragraph::new("cal tab test").render(area, buf);
+        let horizontal = Layout::horizontal([
+            Constraint::Length(24),
+            Constraint::Min(50),
+        ]);
+        let [cal, weekly] = horizontal.areas(area);
+
+        let cal_block = Block::bordered()
+            .border_style(THEME.task_border)
+            .title_style(THEME.task_title)
+            .border_type(BorderType::Thick)
+            .title("Monthly View");
+        self.cal.render(cal_block.inner(cal).offset(Offset {x: 1, y: 0}), buf);
+        cal_block.render(cal, buf);
+
+
+
+        Block::bordered()
+            .title("Weekly View")
+            .border_style(THEME.task_border)
+            .title_style(THEME.task_title)
+            .border_type(BorderType::Thick)
+            .render(weekly, buf);
     }
 }
 
