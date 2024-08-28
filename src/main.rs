@@ -21,6 +21,7 @@ mod tui;
 mod theme;
 mod tabs;
 mod popup;
+mod widgets;
 
 
 enum RunningMode {
@@ -30,7 +31,7 @@ enum RunningMode {
 
 enum Tab {
     TaskList,
-    Calender,
+    Calendar,
     Options,
     Profile,
 }
@@ -50,7 +51,7 @@ pub struct App {
     options: Options,
 
     task_list_tab: TaskListTab,
-    calender_tab: CalenderTab,
+    calendar_tab: CalendarTab,
     options_tab: OptionsTab,
     profile_tab: ProfileTab,
 }
@@ -69,7 +70,7 @@ impl Widget for &App {
         self.render_title_bar(title_bar, buf);
         match self.current_tab {
             Tab::TaskList => self.task_list_tab.render(canvas, buf, &self.task_lists),
-            Tab::Calender => self.calender_tab.render(canvas, buf),
+            Tab::Calendar => self.calendar_tab.render(canvas, buf),
             Tab::Options => self.options_tab.render(canvas, buf, &self.options),
             Tab::Profile => self.profile_tab.render(canvas, buf, &self.profile),
         }
@@ -113,7 +114,7 @@ impl App {
     fn dispatch_input(&mut self, key: KeyCode) -> bool {
         match self.current_tab {
             Tab::TaskList => self.task_list_tab.handle_input(&mut self.task_lists, key),
-            Tab::Calender => self.calender_tab.handle_input(key),
+            Tab::Calendar => self.calendar_tab.handle_input(key),
             Tab::Options => self.options_tab.handle_input(key),
             Tab::Profile => self.profile_tab.handle_input(key),
         }
@@ -121,8 +122,8 @@ impl App {
 
     fn next_tab(&mut self) {
         self.current_tab = match self.current_tab {
-            Tab::TaskList => Tab::Calender,
-            Tab::Calender => Tab::Options,
+            Tab::TaskList => Tab::Calendar,
+            Tab::Calendar => Tab::Options,
             Tab::Options => Tab::Profile,
             Tab::Profile => Tab::TaskList,
         }
@@ -131,8 +132,8 @@ impl App {
     fn previous_tab(&mut self) {
         self.current_tab = match self.current_tab {
             Tab::TaskList => Tab::Profile,
-            Tab::Calender => Tab::TaskList,
-            Tab::Options => Tab::Calender,
+            Tab::Calendar => Tab::TaskList,
+            Tab::Options => Tab::Calendar,
             Tab::Profile => Tab::Options,
         }
     }
@@ -145,12 +146,12 @@ impl App {
             Constraint::Length(9),
             Constraint::Length(9),
         ]);
-        let [app_name, list_tab, calender_tab, options_tab, profile_tab] = horizontal.areas(area);
+        let [app_name, list_tab, calendar_tab, options_tab, profile_tab] = horizontal.areas(area);
 
         Block::new().style(THEME.root).render(area, buf);
         Paragraph::new("CL-TODO").render(app_name, buf);
         Paragraph::new(" Tasks ").style(if let Tab::TaskList = self.current_tab {THEME.root_tab_selected} else {THEME.root}).render(list_tab, buf);
-        Paragraph::new(" Calender ").style(if let Tab::Calender = self.current_tab {THEME.root_tab_selected} else {THEME.root}).render(calender_tab, buf);
+        Paragraph::new(" Calendar ").style(if let Tab::Calendar = self.current_tab {THEME.root_tab_selected} else {THEME.root}).render(calendar_tab, buf);
         Paragraph::new(" Options ").style(if let Tab::Options = self.current_tab {THEME.root_tab_selected} else {THEME.root}).render(options_tab, buf);
         Paragraph::new(" Profile ").style(if let Tab::Profile = self.current_tab {THEME.root_tab_selected} else {THEME.root}).render(profile_tab, buf);
     }
@@ -226,7 +227,7 @@ fn main() -> io::Result<()> {
             selected: 0,
             new_task_window: TaskEditorPopup::default(),
         },
-        calender_tab: CalenderTab {},
+        calendar_tab: CalendarTab::default(),
         options_tab: OptionsTab {},
         profile_tab: ProfileTab {}
     };
