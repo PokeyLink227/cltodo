@@ -23,10 +23,11 @@ mod tabs;
 mod popup;
 mod widgets;
 
-
+#[derive(Clone, Copy, PartialEq)]
 enum RunningMode {
     Running,
     Exiting,
+    Command,
 }
 
 enum Tab {
@@ -45,6 +46,7 @@ enum Dialogue {
 pub struct App {
     mode: RunningMode,
     current_tab: Tab,
+    command_str: String,
 
     task_lists: Vec<TaskList>,
     profile: UserProfile,
@@ -74,14 +76,18 @@ impl Widget for &App {
             Tab::Options => self.options_tab.render(canvas, buf, &self.options),
             Tab::Profile => self.profile_tab.render(canvas, buf, &self.profile),
         }
-        self.render_bottom_bar(bottom_bar, buf);
+        if self.mode == RunningMode::Command {
+            Line::from(vec![Span::from(":"), Span::from(&self.command_str)]).render(bottom_bar, buf);
+        } else {
+            self.render_bottom_bar(bottom_bar, buf);
+        }
     }
 
 }
 
 impl App {
     pub fn run(&mut self, terminal: &mut tui::Tui) -> io::Result<()> {
-        while let RunningMode::Running = self.mode {
+        while self.mode != RunningMode::Exiting {
             terminal.draw(|frame| self.render_frame(frame))?;
             self.handle_events()?;
         }
@@ -102,6 +108,7 @@ impl App {
                             KeyCode::Char('q') => self.mode = RunningMode::Exiting,
                             KeyCode::Tab => self.next_tab(),
                             KeyCode::BackTab => self.previous_tab(),
+                            KeyCode::Char(':') => self.mode = RunningMode::Command,
                             _ => {},
                         }
                     }
@@ -112,11 +119,33 @@ impl App {
     }
 
     fn dispatch_input(&mut self, key: KeyCode) -> bool {
-        match self.current_tab {
-            Tab::TaskList => self.task_list_tab.handle_input(&mut self.task_lists, key),
-            Tab::Calendar => self.calendar_tab.handle_input(key),
-            Tab::Options => self.options_tab.handle_input(key),
-            Tab::Profile => self.profile_tab.handle_input(key),
+        if self.mode == RunningMode::Command {
+            match key {
+                KeyCode::Char(c) => self.command_str.push(c),
+                KeyCode::Backspace => _ = self.command_str.pop(),
+                KeyCode::Enter => {
+                    self.mode = RunningMode::Running;
+                    self.process_command();
+                    self.command_str.clear();
+                },
+                _ => {},
+            }
+            true
+        } else {
+            match self.current_tab {
+                Tab::TaskList => self.task_list_tab.handle_input(&mut self.task_lists, key),
+                Tab::Calendar => self.calendar_tab.handle_input(key),
+                Tab::Options => self.options_tab.handle_input(key),
+                Tab::Profile => self.profile_tab.handle_input(key),
+            }
+        }
+    }
+
+    fn process_command(&mut self) {
+        match self.command_str.split(' ').next().unwrap() {
+            "tasks" => self.current_tab = Tab::TaskList,
+            "quit" | "q" => self.mode = RunningMode::Exiting,
+            _ => {},
         }
     }
 
@@ -190,6 +219,7 @@ fn main() -> io::Result<()> {
     let mut app = App {
         mode: RunningMode::Running,
         current_tab: Tab::TaskList,
+        command_str: String::new(),
         task_lists: vec![
             TaskList {name: "cl-todo stuff".to_string(), selected: 0, tasks: vec![
                 Task {name: "dynamic keybinds bar".to_string(), status: TaskStatus::InProgress, duration: Duration::default(), date: Date {month: 1, day: 15}},
