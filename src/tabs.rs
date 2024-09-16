@@ -7,6 +7,7 @@ use ratatui::{
 };
 use crossterm::event::{KeyCode};
 use serde::{Deserialize, Serialize};
+use chrono::{Datelike, Weekday, NaiveDate};
 use crate::{
     theme::{THEME},
     popup::{PopupStatus, TaskEditorPopup, TaskSource},
@@ -30,6 +31,7 @@ impl std::fmt::Display for Duration {
     }
 }
 
+/*
 #[derive(Default, Copy, Clone, Debug, Deserialize, Serialize)]
 pub struct Date {
     //pub year: u16,
@@ -65,6 +67,27 @@ impl std::fmt::Display for Date {
         }
     }
 }
+*/
+
+fn disp_md(date: NaiveDate) -> String {
+    format!("{} {:02}",
+        match date.month() {
+            1  => "Jan",
+            2  => "Feb",
+            3  => "Mar",
+            4  => "Apr",
+            5  => "May",
+            6  => "Jun",
+            7  => "Jul",
+            8  => "Aug",
+            9  => "Sep",
+            10 => "Oct",
+            11 => "Nov",
+            12 => "Dec",
+            _  => "ERR",
+        },
+        date.day(),)
+}
 
 #[derive(Default, Clone, Deserialize, Serialize)]
 pub enum TaskStatus {
@@ -79,7 +102,7 @@ pub struct Task {
     pub name: String,
     pub status: TaskStatus,
     pub duration: Duration,
-    pub date: Date,
+    pub date: NaiveDate,
     pub sub_tasks: Vec<Task>,
 }
 
@@ -256,7 +279,7 @@ impl TaskListTab {
                 format!(" {} ", task.name),
                 if index == selected_list.selected {THEME.task_selected} else {THEME.task}
             ).render(desc_area, buf);
-            Span::from(format!(" {} ", task.date)).render(date_area, buf);
+            Span::from(format!(" {} ", disp_md(task.date))).render(date_area, buf);
             Span::from(format!(" {} ", task.duration)).render(duration_area, buf);
 
             tasks_inner_area = tasks_inner_area.offset(Offset {x: 0, y: 1});
