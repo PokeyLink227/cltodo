@@ -80,6 +80,7 @@ pub struct Task {
     pub status: TaskStatus,
     pub duration: Duration,
     pub date: Date,
+    pub sub_tasks: Vec<Task>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -259,6 +260,12 @@ impl TaskListTab {
             Span::from(format!(" {} ", task.duration)).render(duration_area, buf);
 
             tasks_inner_area = tasks_inner_area.offset(Offset {x: 0, y: 1});
+
+            for (sub_index, sub_task) in task.sub_tasks.iter().enumerate() {
+                let [mark_area, desc_area, date_area, duration_area] = horizontal.areas(tasks_inner_area);
+                Span::from(format!(" {} ", sub_task.name)).render(desc_area, buf);
+                tasks_inner_area = tasks_inner_area.offset(Offset {x: 0, y: 1});
+            }
         }
 
         // Popup Rendering
