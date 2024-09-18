@@ -111,7 +111,7 @@ impl App {
                             KeyCode::BackTab => self.previous_tab(),
                             KeyCode::Char(':') => self.mode = RunningMode::Command,
                             _ => {},
-                        }
+                        }   
                     }
                 }
             }
@@ -127,6 +127,10 @@ impl App {
                 KeyCode::Enter => {
                     self.mode = RunningMode::Running;
                     self.process_command();
+                    self.command_str.clear();
+                },
+                KeyCode::Esc => {
+                    self.mode = RunningMode::Running;
                     self.command_str.clear();
                 },
                 _ => {},
