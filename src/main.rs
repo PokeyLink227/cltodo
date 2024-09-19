@@ -81,7 +81,7 @@ impl Widget for &App {
         if self.mode == RunningMode::Command {
             Line::from(vec![Span::from(":"), Span::from(&self.command_str)]).render(bottom_bar, buf);
         } else if let Some(_) = self.frames_since_error {
-            Line::from(vec![Span::from("Error: Couldn't parse command").style(THEME.command_error)]).render(bottom_bar, buf);
+            Span::from(format!("Error: Unknown command \"{}\"", self.command_str)).style(THEME.command_error).render(bottom_bar, buf);
         } else {
             self.render_bottom_bar(bottom_bar, buf);
         }
@@ -123,6 +123,7 @@ impl App {
                             KeyCode::Char(':') => {
                                 self.mode = RunningMode::Command;
                                 self.frames_since_error = None;
+                                self.command_str.clear();
                             }
                             _ => {},
                         }
@@ -141,11 +142,9 @@ impl App {
                 KeyCode::Enter => {
                     self.mode = RunningMode::Running;
                     self.process_command();
-                    self.command_str.clear();
                 },
                 KeyCode::Esc => {
                     self.mode = RunningMode::Running;
-                    self.command_str.clear();
                 },
                 _ => {},
             }
