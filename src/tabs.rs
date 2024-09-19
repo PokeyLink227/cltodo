@@ -157,6 +157,7 @@ impl TaskListTab {
                 KeyCode::Char('k') => selected_list.previous_task(),
                 KeyCode::Char('j') => selected_list.next_task(),
                 KeyCode::Char('a') => self.new_task(),
+                KeyCode::Char('e') => self.edit_task(task_lists),
                 KeyCode::Char('m') => self.mark_task(task_lists),
                 KeyCode::Char('d') => self.delete_task(task_lists),
                 KeyCode::Char('s') => self.save_data(task_lists),
