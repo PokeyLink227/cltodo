@@ -54,6 +54,11 @@ fn disp_md(date: NaiveDate) -> String {
         date.day(),)
 }
 
+pub enum TaskCommandError {
+    UnknownCommand,
+    InvalidFile,
+}
+
 #[derive(Default, Clone, Deserialize, Serialize)]
 pub enum TaskStatus {
     #[default]
@@ -152,42 +157,40 @@ impl TaskListTab {
         input_captured
     }
 
-    pub fn process_command(&mut self, mut command: Split<char>, task_lists: &mut Vec<TaskList>) -> bool {
+    pub fn process_command(&mut self, mut command: Split<char>, task_lists: &mut Vec<TaskList>) -> Result<(), TaskCommandError> {
         match command.next() {
             Some("new") => {
                 self.new_task();
-                true
+                Ok(())
             }
             Some("save") => match command.next() {
                 None => {
                     self.save_data("list.json", task_lists);
-                    true
+                    Ok(())
                 }
                 Some(filename) => {
                     self.save_data(filename, task_lists);
-                    true
+                    Ok(())
                 }
             }
             Some("load") => match command.next() {
-                None => {
-                    self.load_data("list.json", task_lists);
-                    true
-                }
-                Some(filename) => {
-                    self.load_data(filename, task_lists);
-                    true
-                }
+                None => self.load_data("list.json", task_lists),
+                Some(filename) => self.load_data(filename, task_lists),
             }
-            None | Some(_) => false,
+            None | Some(_) => Err(TaskCommandError::UnknownCommand),
         }
     }
 
-    fn load_data(&mut self, filename: &str, task_lists: &mut Vec<TaskList>) {
-        let mut file = File::open(filename).unwrap();
+    fn load_data(&mut self, filename: &str, task_lists: &mut Vec<TaskList>) -> Result<(), TaskCommandError> {
+        let mut file = match File::open(filename) {
+            Ok(f) => f,
+            Err(_) => return Err(TaskCommandError::InvalidFile)
+        };
         let mut data = vec![];
         file.read_to_end(&mut data).unwrap();
         let temp: Vec<TaskList> = serde_json::from_slice(&data).unwrap();
         *task_lists = temp;
+        Ok(())
     }
 
     fn save_data(&mut self, filename: &str, task_lists: &mut Vec<TaskList>) {

@@ -163,10 +163,11 @@ impl App {
         let mut parsed_command = self.command_str.split(' ');
         match  parsed_command.next().unwrap() {
             "tasks" => self.current_tab = Tab::TaskList,
-            "task" => {
-                if !self.task_list_tab.process_command(parsed_command, &mut self.task_lists) {
+            "task" => match self.task_list_tab.process_command(parsed_command, &mut self.task_lists) {
+                Err(_) => {
                     self.frames_since_error = Some(0);
                 }
+                Ok(()) => {},
             }
             "quit" | "q" => self.mode = RunningMode::Exiting,
             _ => self.frames_since_error = Some(0),
