@@ -3,6 +3,7 @@ use ratatui::style::{Color, Modifier, Style};
 pub struct Theme {
     pub root: Style,
     pub root_tab_selected: Style,
+    pub command_error: Style,
     pub popup: Style,
     pub popup_focused: Style,
     pub popup_selected: Style,
@@ -24,6 +25,7 @@ pub struct CalendarStyle {
 pub const THEME: Theme = Theme {
     root: Style::new().fg(WHITE).bg(DARKER_GRAY),
     root_tab_selected: Style::new().fg(YELLOW).bg(DARK_GRAY),
+    command_error: Style::new().fg(WHITE).bg(RED),
     popup: Style::new().fg(WHITE).bg(DARKER_GRAY),
     popup_focused: Style::new().fg(WHITE).bg(DARK_GRAY),
     popup_selected: Style::new().fg(YELLOW).bg(DARK_GRAY),
@@ -47,6 +49,7 @@ const DARK_GRAY: Color = Color::Rgb(68, 68, 68);
 const DARKER_GRAY: Color = Color::Rgb(38, 38, 38);
 const BLACK: Color = Color::Rgb(8, 8, 8);
 pub const YELLOW: Color = Color::Rgb(240, 180, 30);
+const RED: Color = Color::Rgb(210, 60, 60);
 
 //from apollo color palette
 const BLUE_0: Color = Color::from_u32(0x00172038);
