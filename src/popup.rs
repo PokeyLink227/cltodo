@@ -215,11 +215,7 @@ impl Widget for &TaskEditorPopup {
         ]);
         let [status_area, date_area, duration_area] = mid_horiz.areas(mid_area);
         Span::styled(
-            format!("Status: {}", match self.task.status {
-                TaskStatus::NotStarted => ' ',
-                TaskStatus::InProgress => '-',
-                TaskStatus::Finished => 'X',
-            }),
+            format!("Status: {}", self.task.status.get_symbol()),
             self.get_style(TaskEditorField::Status)
         )
             .render(status_area, buf);

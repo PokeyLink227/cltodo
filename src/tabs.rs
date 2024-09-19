@@ -34,44 +34,6 @@ impl std::fmt::Display for Duration {
     }
 }
 
-/*
-#[derive(Default, Copy, Clone, Debug, Deserialize, Serialize)]
-pub struct Date {
-    //pub year: u16,
-    pub month: u8,
-    pub day: u8,
-}
-
-impl std::fmt::Display for Date {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.month == 0 && self.day == 0 {
-            write!(f, "  --  ")
-        } else {
-            write!(
-                f,
-                "{} {:02}",
-                match self.month {
-                    1  => "Jan",
-                    2  => "Feb",
-                    3  => "Mar",
-                    4  => "Apr",
-                    5  => "May",
-                    6  => "Jun",
-                    7  => "Jul",
-                    8  => "Aug",
-                    9  => "Sep",
-                    10 => "Oct",
-                    11 => "Nov",
-                    12 => "Dec",
-                    _  => "ERR",
-                },
-                self.day,
-            )
-        }
-    }
-}
-*/
-
 fn disp_md(date: NaiveDate) -> String {
     format!("{} {:02}",
         match date.month() {
@@ -98,6 +60,27 @@ pub enum TaskStatus {
     NotStarted,
     InProgress,
     Finished,
+    Deleted,
+}
+
+impl TaskStatus {
+    pub fn get_symbol(&self) -> char {
+        match self {
+            TaskStatus::NotStarted => ' ',
+            TaskStatus::InProgress => '-',
+            TaskStatus::Finished => 'x',
+            TaskStatus::Deleted => 'D',
+        }
+    }
+
+    pub fn cycle_next(&mut self) {
+        *self = match *self {
+            TaskStatus::NotStarted => TaskStatus::InProgress,
+            TaskStatus::InProgress => TaskStatus::Finished,
+            TaskStatus::Finished => TaskStatus::NotStarted,
+            TaskStatus::Deleted => TaskStatus::Deleted,
+        }
+    }
 }
 
 #[derive(Default, Clone, Deserialize, Serialize)]
@@ -197,11 +180,7 @@ impl TaskListTab {
         if task_lists.is_empty() || task_lists[self.selected].tasks.is_empty() { return; }
 
         let list = &mut task_lists[self.selected];
-        list.tasks[list.selected].status = match list.tasks[list.selected].status {
-            TaskStatus::NotStarted => TaskStatus::InProgress,
-            TaskStatus::InProgress => TaskStatus::Finished,
-            TaskStatus::Finished => TaskStatus::NotStarted,
-        }
+        list.tasks[list.selected].status.cycle_next();
     }
 
     fn delete_task(&mut self, task_lists: &mut Vec<TaskList>) {
@@ -290,14 +269,7 @@ impl TaskListTab {
 
             let [mark_area, desc_area, date_area, duration_area] = horizontal.areas(tasks_inner_area);
             Span::styled(
-                format!(
-                    "[{}] ",
-                    match task.status {
-                        TaskStatus::NotStarted => ' ',
-                        TaskStatus::InProgress => '-',
-                        TaskStatus::Finished => 'X',
-                    }
-                ),
+                format!("[{}] ",task.status.get_symbol()),
                 if index == selected_list.selected {THEME.task_selected} else {THEME.task}
             ).render(mark_area, buf);
             Span::styled(
