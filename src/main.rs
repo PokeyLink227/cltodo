@@ -48,6 +48,7 @@ pub struct App {
     mode: RunningMode,
     current_tab: Tab,
     command_str: String,
+    frames_since_error: Option<u32>,
 
     task_lists: Vec<TaskList>,
     profile: UserProfile,
@@ -79,6 +80,8 @@ impl Widget for &App {
         }
         if self.mode == RunningMode::Command {
             Line::from(vec![Span::from(":"), Span::from(&self.command_str)]).render(bottom_bar, buf);
+        } else if let Some(_) = self.frames_since_error {
+            Line::from(vec![Span::from("Error: Couldn't parse command").style(THEME.command_error)]).render(bottom_bar, buf);
         } else {
             self.render_bottom_bar(bottom_bar, buf);
         }
@@ -91,6 +94,14 @@ impl App {
         while self.mode != RunningMode::Exiting {
             terminal.draw(|frame| self.render_frame(frame))?;
             self.handle_events()?;
+
+            if let Some(frames) = self.frames_since_error {
+                if frames >= 120 {
+                    self.frames_since_error = None;
+                } else {
+                    self.frames_since_error = Some(frames + 1);
+                }
+            }
         }
         Ok(())
     }
@@ -109,9 +120,12 @@ impl App {
                             KeyCode::Char('q') => self.mode = RunningMode::Exiting,
                             KeyCode::Tab => self.next_tab(),
                             KeyCode::BackTab => self.previous_tab(),
-                            KeyCode::Char(':') => self.mode = RunningMode::Command,
+                            KeyCode::Char(':') => {
+                                self.mode = RunningMode::Command;
+                                self.frames_since_error = None;
+                            }
                             _ => {},
-                        }   
+                        }
                     }
                 }
             }
@@ -128,10 +142,12 @@ impl App {
                     self.mode = RunningMode::Running;
                     self.process_command();
                     self.command_str.clear();
+                    self.frames_since_error = Some(0);
                 },
                 KeyCode::Esc => {
                     self.mode = RunningMode::Running;
                     self.command_str.clear();
+                    self.frames_since_error = Some(0);
                 },
                 _ => {},
             }
@@ -225,6 +241,7 @@ fn main() -> io::Result<()> {
         mode: RunningMode::Running,
         current_tab: Tab::TaskList,
         command_str: String::new(),
+        frames_since_error: None,
         task_lists: vec![
             TaskList {name: "cl-todo stuff".to_string(), selected: 0, tasks: vec![
                 Task {name: "dynamic keybinds bar".to_string(), status: TaskStatus::InProgress, duration: Duration::default(), date: NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(), sub_tasks: vec![
