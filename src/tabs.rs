@@ -349,6 +349,7 @@ impl CalendarTab {
 
 pub struct Options {
     pub delete_on_completion: bool,
+    pub error_display_time: u32,
 }
 
 pub struct OptionsTab {
@@ -365,10 +366,15 @@ impl OptionsTab {
             .border_type(BorderType::Thick)
             .style(THEME.task_border);
         Paragraph::new(
-            format!(
-                "[{}] Delete task on completion",
-                if options.delete_on_completion {'Y'} else {'N'}
-            )
+            Text::from(vec![
+                Line::from(format!(
+                    "Delete task on completion: {}",
+                    if options.delete_on_completion {'Y'} else {'N'}
+                )),
+                Line::from(format!(
+                    "Error message display time: {} sec", options.error_display_time
+                ))
+            ])
         )
             .style(THEME.task)
             .block(border)

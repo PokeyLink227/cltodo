@@ -273,6 +273,7 @@ fn main() -> io::Result<()> {
         },
         options: Options {
             delete_on_completion: false,
+            error_display_time: 2,
         },
         task_list_tab: TaskListTab {
             controls: [
