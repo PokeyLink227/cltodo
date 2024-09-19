@@ -142,12 +142,10 @@ impl App {
                     self.mode = RunningMode::Running;
                     self.process_command();
                     self.command_str.clear();
-                    self.frames_since_error = Some(0);
                 },
                 KeyCode::Esc => {
                     self.mode = RunningMode::Running;
                     self.command_str.clear();
-                    self.frames_since_error = Some(0);
                 },
                 _ => {},
             }
@@ -163,10 +161,16 @@ impl App {
     }
 
     fn process_command(&mut self) {
-        match self.command_str.split(' ').next().unwrap() {
+        let mut parsed_command = self.command_str.split(' ');
+        match  parsed_command.next().unwrap() {
             "tasks" => self.current_tab = Tab::TaskList,
+            "task" => {
+                if !self.task_list_tab.process_command(parsed_command) {
+                    self.frames_since_error = Some(0);
+                }
+            }
             "quit" | "q" => self.mode = RunningMode::Exiting,
-            _ => {},
+            _ => self.frames_since_error = Some(0),
         }
     }
 

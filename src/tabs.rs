@@ -1,5 +1,8 @@
-use std::fs::File;
-use std::io::prelude::*;
+use std::{
+    io::prelude::*,
+    fs::File,
+    str::Split,
+};
 use ratatui::{
     prelude::*,
     widgets::*,
@@ -163,6 +166,16 @@ impl TaskListTab {
         }
 
         input_captured
+    }
+
+    pub fn process_command(&mut self, mut command: Split<char>) -> bool {
+        match command.next() {
+            Some("new") => {
+                self.new_task();
+                true
+            }
+            None | Some(_) => false,
+        }
     }
 
     fn load_data(&mut self, task_lists: &mut Vec<TaskList>) {
