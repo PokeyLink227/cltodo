@@ -143,8 +143,8 @@ impl TaskListTab {
                 KeyCode::Char('e') => self.edit_task(task_lists),
                 KeyCode::Char('m') => self.mark_task(task_lists),
                 KeyCode::Char('d') => self.delete_task(task_lists),
-                KeyCode::Char('s') => self.save_data(task_lists),
-                KeyCode::Char('S') => self.load_data(task_lists),
+                //KeyCode::Char('s') => self.save_data(task_lists),
+                //KeyCode::Char('S') => self.load_data(task_lists),
                 _ => input_captured = false,
             }
         }
@@ -152,26 +152,46 @@ impl TaskListTab {
         input_captured
     }
 
-    pub fn process_command(&mut self, mut command: Split<char>) -> bool {
+    pub fn process_command(&mut self, mut command: Split<char>, task_lists: &mut Vec<TaskList>) -> bool {
         match command.next() {
             Some("new") => {
                 self.new_task();
                 true
             }
+            Some("save") => match command.next() {
+                None => {
+                    self.save_data("list.json", task_lists);
+                    true
+                }
+                Some(filename) => {
+                    self.save_data(filename, task_lists);
+                    true
+                }
+            }
+            Some("load") => match command.next() {
+                None => {
+                    self.load_data("list.json", task_lists);
+                    true
+                }
+                Some(filename) => {
+                    self.load_data(filename, task_lists);
+                    true
+                }
+            }
             None | Some(_) => false,
         }
     }
 
-    fn load_data(&mut self, task_lists: &mut Vec<TaskList>) {
-        let mut file = File::open("test.txt").unwrap();
+    fn load_data(&mut self, filename: &str, task_lists: &mut Vec<TaskList>) {
+        let mut file = File::open(filename).unwrap();
         let mut data = vec![];
         file.read_to_end(&mut data).unwrap();
         let temp: Vec<TaskList> = serde_json::from_slice(&data).unwrap();
         *task_lists = temp;
     }
 
-    fn save_data(&mut self, task_lists: &mut Vec<TaskList>) {
-        let mut file = File::create("test.txt").unwrap();
+    fn save_data(&mut self, filename: &str, task_lists: &mut Vec<TaskList>) {
+        let mut file = File::create(filename).unwrap();
         let out = serde_json::to_vec(&task_lists).unwrap();
         file.write_all(&out).unwrap();
     }

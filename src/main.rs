@@ -164,7 +164,7 @@ impl App {
         match  parsed_command.next().unwrap() {
             "tasks" => self.current_tab = Tab::TaskList,
             "task" => {
-                if !self.task_list_tab.process_command(parsed_command) {
+                if !self.task_list_tab.process_command(parsed_command, &mut self.task_lists) {
                     self.frames_since_error = Some(0);
                 }
             }
