@@ -281,7 +281,7 @@ fn main() -> io::Result<()> {
                 ("K", "Up"),
                 ("H", "Prev. List"),
                 ("L", "Next List"),
-                ("E", "Interact"),
+                ("M", "Interact"),
             ],
             selected: 0,
             new_task_window: TaskEditorPopup::default(),

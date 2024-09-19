@@ -157,7 +157,7 @@ impl TaskListTab {
                 KeyCode::Char('k') => selected_list.previous_task(),
                 KeyCode::Char('j') => selected_list.next_task(),
                 KeyCode::Char('a') => self.new_task(),
-                KeyCode::Char('e') => self.interact(task_lists),
+                KeyCode::Char('m') => self.mark_task(task_lists),
                 KeyCode::Char('d') => self.delete_task(task_lists),
                 KeyCode::Char('s') => self.save_data(task_lists),
                 KeyCode::Char('S') => self.load_data(task_lists),
@@ -192,6 +192,17 @@ impl TaskListTab {
         file.write_all(&out).unwrap();
     }
 
+    fn mark_task(&mut self, task_lists: &mut Vec<TaskList>) {
+        if task_lists.is_empty() || task_lists[self.selected].tasks.is_empty() { return; }
+
+        let list = &mut task_lists[self.selected];
+        list.tasks[list.selected].status = match list.tasks[list.selected].status {
+            TaskStatus::NotStarted => TaskStatus::InProgress,
+            TaskStatus::InProgress => TaskStatus::Finished,
+            TaskStatus::Finished => TaskStatus::NotStarted,
+        }
+    }
+
     fn delete_task(&mut self, task_lists: &mut Vec<TaskList>) {
         if task_lists.is_empty() || task_lists[self.selected].tasks.is_empty() { return; }
 
@@ -202,7 +213,7 @@ impl TaskListTab {
         }
     }
 
-    fn interact(&mut self, task_lists: &mut Vec<TaskList>) {
+    fn edit_task(&mut self, task_lists: &mut Vec<TaskList>) {
         if task_lists.is_empty() || task_lists[self.selected].tasks.is_empty() { return; }
 
         let selected_list = &task_lists[self.selected];
