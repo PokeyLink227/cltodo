@@ -1,6 +1,9 @@
 #![allow(unused_variables, dead_code, unused_imports)]
 
-use std::io::{self};
+use std::{
+    io::{self},
+    time::SystemTime,
+};
 use crossterm::{
     event::{self, KeyCode},
 };
@@ -50,6 +53,10 @@ pub struct App {
     command_str: String,
     frames_since_error: Option<u32>,
 
+    frame_time: u128,
+    frame_time_index: usize,
+    avg_frame_time: [u128; 20],
+
     task_lists: Vec<TaskList>,
     profile: UserProfile,
     options: Options,
@@ -92,16 +99,23 @@ impl Widget for &App {
 impl App {
     pub fn run(&mut self, terminal: &mut tui::Tui) -> io::Result<()> {
         while self.mode != RunningMode::Exiting {
+            let start_time = SystemTime::now();
+
             terminal.draw(|frame| self.render_frame(frame))?;
             self.handle_events()?;
 
             if let Some(frames) = self.frames_since_error {
-                if frames >= 120 {
+                if frames >= self.options.error_display_time * self.options.refresh_rate {
                     self.frames_since_error = None;
                 } else {
                     self.frames_since_error = Some(frames + 1);
                 }
             }
+
+            self.frame_time = start_time.elapsed().unwrap().as_millis();
+            self.avg_frame_time[self.frame_time_index] = self.frame_time;
+            self.frame_time_index += 1;
+            if self.frame_time_index >= 20 { self.frame_time_index = 0; }
         }
         Ok(())
     }
@@ -203,7 +217,8 @@ impl App {
         let [app_name, list_tab, calendar_tab, options_tab, profile_tab] = horizontal.areas(area);
 
         Block::new().style(THEME.root).render(area, buf);
-        Paragraph::new("CL-TODO").render(app_name, buf);
+        //Paragraph::new("CL-TODO").render(app_name, buf);
+        Span::from(format!("{}", self.avg_frame_time.iter().sum::<u128>() / 20)).render(app_name, buf);
         Paragraph::new(" Tasks ").style(if let Tab::TaskList = self.current_tab {THEME.root_tab_selected} else {THEME.root}).render(list_tab, buf);
         Paragraph::new(" Calendar ").style(if let Tab::Calendar = self.current_tab {THEME.root_tab_selected} else {THEME.root}).render(calendar_tab, buf);
         Paragraph::new(" Options ").style(if let Tab::Options = self.current_tab {THEME.root_tab_selected} else {THEME.root}).render(options_tab, buf);
@@ -246,6 +261,9 @@ fn main() -> io::Result<()> {
         current_tab: Tab::TaskList,
         command_str: String::new(),
         frames_since_error: None,
+        frame_time: 0,
+        frame_time_index: 0,
+        avg_frame_time: [0; 20],
         task_lists: vec![
             TaskList {name: "cl-todo stuff".to_string(), selected: 0, tasks: vec![
                 Task {name: "dynamic keybinds bar".to_string(), status: TaskStatus::InProgress, duration: Duration::default(), date: NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(), sub_tasks: vec![
@@ -275,6 +293,7 @@ fn main() -> io::Result<()> {
         options: Options {
             delete_on_completion: false,
             error_display_time: 2,
+            refresh_rate: 60,
         },
         task_list_tab: TaskListTab {
             controls: [

@@ -172,8 +172,7 @@ impl TaskListTab {
                 None => self.load_data("list.json", task_lists),
                 Some(filename) => self.load_data(filename, task_lists),
             }
-            None => Ok(TabRequest::SetActive), 
-            Some(_) => Err(TaskCommandError::UnknownCommand),
+            None | Some(_) => Err(TaskCommandError::UnknownCommand),
         }
     }
 
@@ -360,6 +359,7 @@ impl CalendarTab {
 pub struct Options {
     pub delete_on_completion: bool,
     pub error_display_time: u32,
+    pub refresh_rate: u32,
 }
 
 pub struct OptionsTab {
