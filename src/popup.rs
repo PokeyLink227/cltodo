@@ -118,7 +118,8 @@ impl TaskEditorPopup {
             },
         }
 
-        input_captured
+        // ensure app cannot be exited through hotkey while popup is open
+        input_captured || key == KeyCode::Char('q')
     }
 
     pub fn take_task(&mut self) -> Task {
