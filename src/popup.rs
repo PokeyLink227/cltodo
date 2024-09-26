@@ -4,6 +4,10 @@ use ratatui::{
     layout::Flex,
 };
 use crossterm::event::{KeyCode};
+use chrono::{
+    NaiveDate,
+    Days,
+};
 use crate::{
     theme::{THEME},
     tabs::{Task, TaskStatus, disp_md},
@@ -69,21 +73,14 @@ pub struct TaskEditorPopup {
 
     task: Task,
     selected_field: TaskEditorField,
-    field_pos: u16,
-    date_pos: u8,
+
+    editing_date: bool,
+    date_entry: String,
 }
 
 impl TaskEditorPopup {
     pub fn handle_input(&mut self, key: KeyCode) -> bool {
         let mut input_captured = true;
-
-        match key {
-            KeyCode::Enter => self.status = PopupStatus::Confirmed,
-            KeyCode::Esc => self.status = PopupStatus::Closed,
-            KeyCode::Tab => self.selected_field.next(),
-            KeyCode::BackTab => self.selected_field.previous(),
-            _ => {}
-        }
 
         match self.selected_field {
             TaskEditorField::Description => match key {
@@ -106,16 +103,34 @@ impl TaskEditorPopup {
                 _ => input_captured = false,
             },
             TaskEditorField::Date => match key {
-                KeyCode::Char(c) if c >= '0' && c <= '9' => {
-
-                }
                 KeyCode::Char('j') => self.task.date = self.task.date.succ_opt().unwrap(),
                 KeyCode::Char('k') => self.task.date = self.task.date.pred_opt().unwrap(),
+                KeyCode::Tab | KeyCode::Char('/') => if self.editing_date {
+                    self.submit_date();
+                }
+                KeyCode::Char(c) if c >= '0' && c <= '9' || c == '+' || c == '-' => {
+                    self.editing_date = true;
+                    self.date_entry.push(c);
+                }
                 _ => input_captured = false,
             },
             TaskEditorField::Duration => match key {
                 _ => input_captured = false,
             },
+        }
+
+        match key {
+            KeyCode::Enter => {
+                if self.editing_date {
+                    self.submit_date();
+                } else {
+                    self.status = PopupStatus::Confirmed;
+                }
+            }
+            KeyCode::Esc => self.status = PopupStatus::Closed,
+            KeyCode::Tab => self.selected_field.next(),
+            KeyCode::BackTab => self.selected_field.previous(),
+            _ => {}
         }
 
         // ensure app cannot be exited through hotkey while popup is open
@@ -136,6 +151,8 @@ impl TaskEditorPopup {
         self.status = PopupStatus::InUse;
         self.selected_field = TaskEditorField::Description;
         self.task_source = TaskSource::New;
+
+        self.task.date = chrono::offset::Local::now().date_naive();
     }
 
     fn get_style(&self, field: TaskEditorField) -> Style {
@@ -145,6 +162,29 @@ impl TaskEditorPopup {
         } else {
             THEME.popup
         }
+    }
+
+    fn submit_date(&mut self) {
+        match self.parse_date() {
+            None => {}
+            Some(d) => self.task.date = d,
+        }
+        self.editing_date = false;
+        self.date_entry.clear();
+    }
+
+    fn parse_date(&mut self) -> Option<NaiveDate> {
+        if self.date_entry.len() == 0 { return None; }
+
+        let today = chrono::offset::Local::now().date_naive();
+
+        if self.date_entry.as_bytes()[0] == b'+' {
+            return today.checked_add_days(Days::new(self.date_entry.get(1..)?.parse::<u64>().ok()?));
+        } else if self.date_entry.as_bytes()[0] == b'-' {
+            return today.checked_sub_days(Days::new(self.date_entry.get(1..)?.parse::<u64>().ok()?));
+        }
+
+        None
     }
 }
 
@@ -159,8 +199,8 @@ impl Widget for &TaskEditorPopup {
         let window = Block::bordered()
             .style(THEME.popup)
             .border_style(THEME.popup)
-            .title(Line::from(if let TaskSource::New = self.task_source {"New Task"} else {"Edit Task"}))
-            .title_bottom(format!(" [Esc] to Cancel [Enter] to Confirm "));
+            .title(Line::from(if let TaskSource::New = self.task_source {"New Task"} else {"Edit Task"}));
+            //.title_bottom(format!(" [Esc] to Cancel [Enter] to Confirm "));
 
         let win_area = window.inner(area);
         Clear.render(win_area, buf);
@@ -194,7 +234,11 @@ impl Widget for &TaskEditorPopup {
         )
             .render(status_area, buf);
         Span::styled(
-            format!("Date: {}", disp_md(self.task.date)),
+            format!("Date: {}", if self.editing_date {
+                self.date_entry.clone()
+            } else {
+                disp_md(self.task.date)
+            }),
             self.get_style(TaskEditorField::Date)
         )
             .render(date_area, buf);
