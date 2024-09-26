@@ -19,22 +19,6 @@ pub enum PopupStatus {
 }
 
 #[derive(Default, PartialEq, Clone, Copy)]
-enum Mode {
-    Editing,
-    #[default]
-    Navigating,
-}
-
-impl std::fmt::Display for Mode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            Self::Editing => "Edit",
-            Self::Navigating => "Nav",
-        })
-    }
-}
-
-#[derive(Default, PartialEq, Clone, Copy)]
 enum TaskEditorField {
     #[default]
     Description,
@@ -84,7 +68,6 @@ pub struct TaskEditorPopup {
     pub task_source: TaskSource,
 
     task: Task,
-    mode: Mode,
     selected_field: TaskEditorField,
     field_pos: u16,
 }
@@ -105,26 +88,23 @@ impl TaskEditorPopup {
             TaskEditorField::Description => match key {
                 KeyCode::Char(c) => self.task.name.push(c),
                 KeyCode::Backspace => { self.task.name.pop(); },
-                KeyCode::Enter => self.mode = Mode::Navigating,
                 _ => input_captured = false,
             },
             TaskEditorField::Cancel => match key {
-                KeyCode::Enter | KeyCode::Char('e') => self.status = PopupStatus::Canceled,
+                KeyCode::Char('e') => self.status = PopupStatus::Canceled,
                 _ => input_captured = false,
             },
             TaskEditorField::Confirm => match key {
-                KeyCode::Enter | KeyCode::Char('e') => self.status = PopupStatus::Confirmed,
+                KeyCode::Char('e') => self.status = PopupStatus::Confirmed,
                 _ => input_captured = false,
             },
             TaskEditorField::Status => match key {
-                KeyCode::Enter => self.mode = Mode::Navigating,
                 KeyCode::Char('1') => self.task.status = TaskStatus::NotStarted,
                 KeyCode::Char('2') => self.task.status = TaskStatus::InProgress,
                 KeyCode::Char('3') => self.task.status = TaskStatus::Finished,
                 _ => input_captured = false,
             },
             TaskEditorField::Date => match key {
-                KeyCode::Enter => self.mode = Mode::Navigating,
                 KeyCode::Char(c) if c >= '0' && c <= '9' => {},
                 _ => input_captured = false,
             },
@@ -149,17 +129,13 @@ impl TaskEditorPopup {
     pub fn new_task(&mut self) {
         self.status = PopupStatus::InUse;
         self.selected_field = TaskEditorField::Description;
-        self.mode = Mode::Editing;
         self.task_source = TaskSource::New;
     }
 
     fn get_style(&self, field: TaskEditorField) -> Style {
         if self.selected_field == field {
-            if self.mode == Mode::Editing {
-                THEME.popup_selected
-            } else {
-                THEME.popup_focused
-            }
+            THEME.popup_selected
+            //THEME.popup_focused
         } else {
             THEME.popup
         }
@@ -178,7 +154,7 @@ impl Widget for &TaskEditorPopup {
             .style(THEME.popup)
             .border_style(THEME.popup)
             .title(Line::from(if let TaskSource::New = self.task_source {"New Task"} else {"Edit Task"}))
-            .title_bottom(format!(" {} ", self.mode));
+            .title_bottom(format!(" [Esc] to Cancel [Enter] to Confirm "));
 
         let win_area = window.inner(area);
         Clear.render(win_area, buf);
