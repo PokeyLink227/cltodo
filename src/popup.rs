@@ -6,7 +6,7 @@ use ratatui::{
 use crossterm::event::{KeyCode};
 use crate::{
     theme::{THEME},
-    tabs::{Task, TaskStatus},
+    tabs::{Task, TaskStatus, disp_md},
 };
 
 #[derive(Default, PartialEq)]
@@ -70,6 +70,7 @@ pub struct TaskEditorPopup {
     task: Task,
     selected_field: TaskEditorField,
     field_pos: u16,
+    date_pos: u8,
 }
 
 impl TaskEditorPopup {
@@ -105,7 +106,11 @@ impl TaskEditorPopup {
                 _ => input_captured = false,
             },
             TaskEditorField::Date => match key {
-                KeyCode::Char(c) if c >= '0' && c <= '9' => {},
+                KeyCode::Char(c) if c >= '0' && c <= '9' => {
+
+                }
+                KeyCode::Char('j') => self.task.date = self.task.date.succ_opt().unwrap(),
+                KeyCode::Char('k') => self.task.date = self.task.date.pred_opt().unwrap(),
                 _ => input_captured = false,
             },
             TaskEditorField::Duration => match key {
@@ -188,7 +193,7 @@ impl Widget for &TaskEditorPopup {
         )
             .render(status_area, buf);
         Span::styled(
-            format!("Date: {}", self.task.date),
+            format!("Date: {}", disp_md(self.task.date)),
             self.get_style(TaskEditorField::Date)
         )
             .render(date_area, buf);

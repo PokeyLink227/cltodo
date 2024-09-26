@@ -34,7 +34,7 @@ impl std::fmt::Display for Duration {
     }
 }
 
-fn disp_md(date: NaiveDate) -> String {
+pub fn disp_md(date: NaiveDate) -> String {
     format!("{} {:02}",
         match date.month() {
             1  => "Jan",
