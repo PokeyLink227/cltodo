@@ -173,8 +173,8 @@ impl App {
 
     fn process_command(&mut self) {
         let mut parsed_command = self.command_str.split(' ');
-        match  parsed_command.next().unwrap() {
-            "tasks" => match self.task_list_tab.process_command(parsed_command, &mut self.task_lists) {
+        match parsed_command.next().unwrap() {
+            "tasks" | "t" => match self.task_list_tab.process_command(parsed_command, &mut self.task_lists) {
                 Err(TaskCommandError::UnknownCommand) => {
                     self.frames_since_error = Some(0);
                     self.error_str = format!("Unknown Command: \"{}\"", self.command_str);
@@ -190,9 +190,9 @@ impl App {
                 Ok(CommandRequest::None) => {},
                 Ok(CommandRequest::SetActive) => self.current_tab = Tab::TaskList,
             }
-            "calendar" => self.current_tab = Tab::Calendar,
-            "options" => self.current_tab = Tab::Options,
-            "profile" => self.current_tab = Tab::Profile,
+            "calendar" | "c"=> self.current_tab = Tab::Calendar,
+            "options" | "o" => self.current_tab = Tab::Options,
+            "profile" | "p" => self.current_tab = Tab::Profile,
             "quit" | "q" => self.mode = RunningMode::Exiting,
             _ => {
                 self.frames_since_error = Some(0);
@@ -244,7 +244,7 @@ impl App {
     fn render_bottom_bar(&self, area: Rect, buf: &mut Buffer) {
         let common_keys: [(&'static str, &'static str); 2] = [
             ("Q", "Quit"),
-            ("Tab", "Switch Tab"),
+            ("n", "Next Tab"),
         ];
 
         let other_keys_iter = match self.current_tab {

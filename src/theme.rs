@@ -48,7 +48,7 @@ const GRAY: Color = Color::Rgb(128, 128, 128);
 const DARK_GRAY: Color = Color::Rgb(68, 68, 68);
 const DARKER_GRAY: Color = Color::Rgb(38, 38, 38);
 const BLACK: Color = Color::Rgb(8, 8, 8);
-pub const YELLOW: Color = Color::Rgb(240, 180, 30);
+const YELLOW: Color = Color::Rgb(240, 180, 30);
 const RED: Color = Color::Rgb(210, 60, 60);
 
 //from apollo color palette
