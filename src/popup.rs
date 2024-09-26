@@ -45,6 +45,30 @@ enum TaskEditorField {
     Confirm,
 }
 
+impl TaskEditorField {
+    fn next(&mut self) {
+        *self = match self {
+            TaskEditorField::Description => TaskEditorField::Status,
+            TaskEditorField::Status => TaskEditorField::Date,
+            TaskEditorField::Date => TaskEditorField::Duration,
+            TaskEditorField::Duration => TaskEditorField::Cancel,
+            TaskEditorField::Cancel => TaskEditorField::Confirm,
+            TaskEditorField::Confirm => TaskEditorField::Description,
+        }
+    }
+
+    fn previous(&mut self) {
+        *self = match self {
+            TaskEditorField::Description => TaskEditorField::Confirm,
+            TaskEditorField::Status => TaskEditorField::Description,
+            TaskEditorField::Date => TaskEditorField::Status,
+            TaskEditorField::Duration => TaskEditorField::Date,
+            TaskEditorField::Cancel => TaskEditorField::Duration,
+            TaskEditorField::Confirm => TaskEditorField::Cancel,
+        }
+    }
+}
+
 #[derive(Default, PartialEq)]
 pub enum TaskSource {
     #[default]
@@ -69,76 +93,44 @@ impl TaskEditorPopup {
     pub fn handle_input(&mut self, key: KeyCode) -> bool {
         let mut input_captured = true;
 
-        if key == KeyCode::Esc {
-            self.status = PopupStatus::Closed;
+        match key {
+            KeyCode::Enter => self.status = PopupStatus::Confirmed,
+            KeyCode::Esc => self.status = PopupStatus::Closed,
+            KeyCode::Tab => self.selected_field.next(),
+            KeyCode::BackTab => self.selected_field.previous(),
+            _ => {}
         }
 
-        match (self.selected_field, self.mode) {
-            (TaskEditorField::Description, Mode::Editing) => match key {
+        match self.selected_field {
+            TaskEditorField::Description => match key {
                 KeyCode::Char(c) => self.task.name.push(c),
                 KeyCode::Backspace => { self.task.name.pop(); },
                 KeyCode::Enter => self.mode = Mode::Navigating,
                 _ => input_captured = false,
             },
-            (TaskEditorField::Description, Mode::Navigating) => match key {
-                KeyCode::Char('e' | '/') | KeyCode::Enter => self.mode = Mode::Editing,
-                KeyCode::Char('j') => self.selected_field = TaskEditorField::Status,
-                KeyCode::Char('l') => self.selected_field = TaskEditorField::Confirm,
-                _ => input_captured = false,
-            },
-            (TaskEditorField::Cancel, _) => match key {
+            TaskEditorField::Cancel => match key {
                 KeyCode::Enter | KeyCode::Char('e') => self.status = PopupStatus::Canceled,
-                KeyCode::Char('k') => self.selected_field = TaskEditorField::Duration,
-                KeyCode::Char('l') => self.selected_field = TaskEditorField::Confirm,
-                KeyCode::Char('h') => self.selected_field = TaskEditorField::Duration,
                 _ => input_captured = false,
             },
-            (TaskEditorField::Confirm, _) => match key {
+            TaskEditorField::Confirm => match key {
                 KeyCode::Enter | KeyCode::Char('e') => self.status = PopupStatus::Confirmed,
-                KeyCode::Char('h') => self.selected_field = TaskEditorField::Cancel,
-                KeyCode::Char('k') => self.selected_field = TaskEditorField::Description,
                 _ => input_captured = false,
             },
-            (TaskEditorField::Status, Mode::Editing) => match key {
+            TaskEditorField::Status => match key {
                 KeyCode::Enter => self.mode = Mode::Navigating,
                 KeyCode::Char('1') => self.task.status = TaskStatus::NotStarted,
                 KeyCode::Char('2') => self.task.status = TaskStatus::InProgress,
                 KeyCode::Char('3') => self.task.status = TaskStatus::Finished,
                 _ => input_captured = false,
             },
-            (TaskEditorField::Status, Mode::Navigating) => match key {
-                KeyCode::Enter | KeyCode::Char('e') => self.mode = Mode::Editing,
-                KeyCode::Char('j') => self.selected_field = TaskEditorField::Cancel,
-                KeyCode::Char('k') => self.selected_field = TaskEditorField::Description,
-                KeyCode::Char('l') => self.selected_field = TaskEditorField::Date,
-                _ => input_captured = false,
-            },
-            (TaskEditorField::Date, Mode::Editing) => match key {
+            TaskEditorField::Date => match key {
                 KeyCode::Enter => self.mode = Mode::Navigating,
                 KeyCode::Char(c) if c >= '0' && c <= '9' => {},
                 _ => input_captured = false,
             },
-            (TaskEditorField::Date, Mode::Navigating) => match key {
-                KeyCode::Enter | KeyCode::Char('e') => self.mode = Mode::Editing,
-                KeyCode::Char('h') => self.selected_field = TaskEditorField::Status,
-                KeyCode::Char('j') => self.selected_field = TaskEditorField::Cancel,
-                KeyCode::Char('k') => self.selected_field = TaskEditorField::Description,
-                KeyCode::Char('l') => self.selected_field = TaskEditorField::Duration,
+            TaskEditorField::Duration => match key {
                 _ => input_captured = false,
             },
-            (TaskEditorField::Duration, _) => match key {
-                KeyCode::Char('h') => self.selected_field = TaskEditorField::Date,
-                KeyCode::Char('j') => self.selected_field = TaskEditorField::Cancel,
-                KeyCode::Char('k') => self.selected_field = TaskEditorField::Description,
-                KeyCode::Char('l') => self.selected_field = TaskEditorField::Cancel,
-                _ => input_captured = false,
-            },
-        }
-
-        match key {
-            // ensures that navigayion keys are always captured by this popup even if unused
-            KeyCode::Char('h') | KeyCode::Char('j') | KeyCode::Char('k') | KeyCode::Char('l') => input_captured = true,
-            _ => {},
         }
 
         input_captured

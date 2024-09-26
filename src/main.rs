@@ -124,8 +124,8 @@ impl App {
                     if !self.dispatch_input(key.code) {
                         match key.code {
                             KeyCode::Char('q') => self.mode = RunningMode::Exiting,
-                            KeyCode::Tab => self.next_tab(),
-                            KeyCode::BackTab => self.previous_tab(),
+                            KeyCode::Char('n') => self.next_tab(),
+                            KeyCode::Char('N') => self.previous_tab(),
                             KeyCode::Char(':') => {
                                 self.mode = RunningMode::Command;
                                 self.frames_since_error = None;
