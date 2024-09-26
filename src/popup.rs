@@ -6,6 +6,7 @@ use ratatui::{
 use crossterm::event::{KeyCode};
 use chrono::{
     NaiveDate,
+    Datelike,
     Days,
 };
 use crate::{
@@ -105,10 +106,16 @@ impl TaskEditorPopup {
             TaskEditorField::Date => match key {
                 KeyCode::Char('j') => self.task.date = self.task.date.succ_opt().unwrap(),
                 KeyCode::Char('k') => self.task.date = self.task.date.pred_opt().unwrap(),
-                KeyCode::Tab | KeyCode::Char('/') => if self.editing_date {
+                KeyCode::Tab
+                | KeyCode::Char('/') if self.editing_date => {
                     self.submit_date();
                 }
-                KeyCode::Char(c) if c >= '0' && c <= '9' || c == '+' || c == '-' => {
+                KeyCode::Backspace => if self.editing_date {
+                    self.date_entry.pop();
+                }
+                KeyCode::Char(c)
+                    if c >= '0' && c <= '9' || c == '+' || c == '-' =>
+                {
                     self.editing_date = true;
                     self.date_entry.push(c);
                 }
@@ -174,17 +181,37 @@ impl TaskEditorPopup {
     }
 
     fn parse_date(&mut self) -> Option<NaiveDate> {
-        if self.date_entry.len() == 0 { return None; }
-
         let today = chrono::offset::Local::now().date_naive();
 
-        if self.date_entry.as_bytes()[0] == b'+' {
-            return today.checked_add_days(Days::new(self.date_entry.get(1..)?.parse::<u64>().ok()?));
-        } else if self.date_entry.as_bytes()[0] == b'-' {
-            return today.checked_sub_days(Days::new(self.date_entry.get(1..)?.parse::<u64>().ok()?));
+        if self.date_entry.chars().nth(0)? == '+' {
+            today.checked_add_days(Days::new(self
+                                             .date_entry
+                                             .get(1..)?
+                                             .parse::<u64>()
+                                             .ok()?
+                                             ))
+        } else if self.date_entry.chars().nth(0)? == '-' {
+            today.checked_sub_days(Days::new(self
+                                             .date_entry
+                                             .get(1..)?
+                                             .parse::<u64>()
+                                             .ok()?
+                                             ))
+        } else if self.date_entry.len() == 4 {
+            NaiveDate::from_ymd_opt(
+                today.year(),
+                self.date_entry.get(0..2)?.parse::<u32>().ok()?,
+                self.date_entry.get(2..4)?.parse::<u32>().ok()?
+                )
+        } else if self.date_entry.len() == 8 {
+            NaiveDate::from_ymd_opt(
+                self.date_entry.get(0..4)?.parse::<i32>().ok()?,
+                self.date_entry.get(4..6)?.parse::<u32>().ok()?,
+                self.date_entry.get(6..8)?.parse::<u32>().ok()?
+                )
+        } else {
+            None
         }
-
-        None
     }
 }
 
@@ -224,7 +251,7 @@ impl Widget for &TaskEditorPopup {
 
         let mid_horiz = Layout::horizontal([
             Constraint::Length(10),
-            Constraint::Length(13),
+            Constraint::Length(15),
             Constraint::Length(14),
         ]);
         let [status_area, date_area, duration_area] = mid_horiz.areas(mid_area);
