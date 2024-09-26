@@ -12,6 +12,7 @@ use crossterm::event::{KeyCode};
 use serde::{Deserialize, Serialize};
 use chrono::{Datelike, Weekday, NaiveDate};
 use crate::{
+    CommandRequest,
     theme::{THEME},
     popup::{PopupStatus, TaskEditorPopup, TaskSource},
     widgets::{Calendar},
@@ -158,11 +159,11 @@ impl TaskListTab {
         input_captured
     }
 
-    pub fn process_command(&mut self, mut command: Split<char>, task_lists: &mut Vec<TaskList>) -> Result<(), TaskCommandError> {
+    pub fn process_command(&mut self, mut command: Split<char>, task_lists: &mut Vec<TaskList>) -> Result<CommandRequest, TaskCommandError> {
         match command.next() {
             Some("new") => {
                 self.new_task();
-                Ok(())
+                Ok(CommandRequest::None)
             }
             Some("save") => match command.next() {
                 None => self.save_data("list.json", task_lists),
@@ -172,11 +173,12 @@ impl TaskListTab {
                 None => self.load_data("list.json", task_lists),
                 Some(filename) => self.load_data(filename, task_lists),
             }
-            None | Some(_) => Err(TaskCommandError::UnknownCommand),
+            None => Ok(CommandRequest::SetActive),
+            Some(_) => Err(TaskCommandError::UnknownCommand),
         }
     }
 
-    fn load_data(&mut self, filename: &str, task_lists: &mut Vec<TaskList>) -> Result<(), TaskCommandError> {
+    fn load_data(&mut self, filename: &str, task_lists: &mut Vec<TaskList>) -> Result<CommandRequest, TaskCommandError> {
         let mut file = match File::open(filename) {
             Ok(f) => f,
             Err(_) => return Err(TaskCommandError::InvalidFilePath)
@@ -188,17 +190,17 @@ impl TaskListTab {
             Err(_) => return Err(TaskCommandError::InvalidFileFormat)
         };
         *task_lists = temp;
-        Ok(())
+        Ok(CommandRequest::None)
     }
 
-    fn save_data(&mut self, filename: &str, task_lists: &mut Vec<TaskList>) -> Result <(), TaskCommandError> {
+    fn save_data(&mut self, filename: &str, task_lists: &mut Vec<TaskList>) -> Result <CommandRequest, TaskCommandError> {
         let mut file = match File::create(filename) {
             Ok(f) => f,
             Err(_) => return Err(TaskCommandError::InvalidFilePath)
         };
         let out = serde_json::to_vec(&task_lists).unwrap();
         _ = file.write_all(&out).unwrap();
-        Ok(())
+        Ok(CommandRequest::None)
     }
 
     fn mark_task(&mut self, task_lists: &mut Vec<TaskList>) {

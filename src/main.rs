@@ -28,6 +28,12 @@ mod tabs;
 mod popup;
 mod widgets;
 
+pub enum CommandRequest {
+    None,
+    SetActive,
+}
+
+
 #[derive(Clone, Copy, PartialEq)]
 enum RunningMode {
     Running,
@@ -168,8 +174,7 @@ impl App {
     fn process_command(&mut self) {
         let mut parsed_command = self.command_str.split(' ');
         match  parsed_command.next().unwrap() {
-            "tasks" => self.current_tab = Tab::TaskList,
-            "task" => match self.task_list_tab.process_command(parsed_command, &mut self.task_lists) {
+            "tasks" => match self.task_list_tab.process_command(parsed_command, &mut self.task_lists) {
                 Err(TaskCommandError::UnknownCommand) => {
                     self.frames_since_error = Some(0);
                     self.error_str = format!("Unknown Command: \"{}\"", self.command_str);
@@ -182,8 +187,12 @@ impl App {
                     self.frames_since_error = Some(0);
                     self.error_str = "Invalid File Format".to_string();
                 }
-                Ok(()) => {},
+                Ok(CommandRequest::None) => {},
+                Ok(CommandRequest::SetActive) => self.current_tab = Tab::TaskList,
             }
+            "calendar" => self.current_tab = Tab::Calendar,
+            "options" => self.current_tab = Tab::Options,
+            "profile" => self.current_tab = Tab::Profile,
             "quit" | "q" => self.mode = RunningMode::Exiting,
             _ => {
                 self.frames_since_error = Some(0);
