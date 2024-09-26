@@ -101,6 +101,7 @@ impl TaskEditorPopup {
                 KeyCode::Char('1') => self.task.status = TaskStatus::NotStarted,
                 KeyCode::Char('2') => self.task.status = TaskStatus::InProgress,
                 KeyCode::Char('3') => self.task.status = TaskStatus::Finished,
+                KeyCode::Char('j') => self.task.status.cycle_next(),
                 _ => input_captured = false,
             },
             TaskEditorField::Date => match key {
