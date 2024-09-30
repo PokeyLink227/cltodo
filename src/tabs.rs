@@ -59,6 +59,10 @@ pub enum TaskCommandError {
     UnknownCommand,
     InvalidFilePath,
     InvalidFileFormat,
+    /*
+    NotANumber,
+    MissingField,
+    */
 }
 
 #[derive(Default, Clone, Deserialize, Serialize)]
@@ -97,6 +101,9 @@ pub struct Task {
     pub duration: Duration,
     pub date: NaiveDate,
     pub sub_tasks: Vec<Task>,
+
+    #[serde(skip)]
+    pub expanded: bool,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -107,6 +114,14 @@ pub struct TaskList {
 }
 
 impl TaskList {
+    pub fn new(new_name: String, tasks_new: Option<Vec<Task>>) -> Self {
+        TaskList {
+            name: new_name,
+            selected: 0,
+            tasks: tasks_new.or(Some(Vec::new())).unwrap(),
+        }
+    }
+
     fn next_task(&mut self) {
         if self.tasks.is_empty() { return; }
         self.selected = (self.selected + 1) % self.tasks.len();
@@ -123,6 +138,8 @@ pub struct TaskListTab {
     pub selected: usize,
 
     pub new_task_window: TaskEditorPopup,
+
+    pub selected_sub_task: usize,
 }
 
 impl TaskListTab {
@@ -144,12 +161,29 @@ impl TaskListTab {
             match key {
                 KeyCode::Char('h') => self.previous_tab(task_lists),
                 KeyCode::Char('l') => self.next_tab(task_lists),
-                KeyCode::Char('k') => selected_list.previous_task(),
-                KeyCode::Char('j') => selected_list.next_task(),
+                KeyCode::Char('k') => {
+                    if self.selected_sub_task == 0 {
+                        selected_list.previous_task();
+                        if selected_list.tasks[selected_list.selected].expanded {
+                            self.selected_sub_task = selected_list.tasks[selected_list.selected].sub_tasks.len();
+                        }
+                    } else {
+                        self.selected_sub_task -= 1;
+                    }
+                }
+                KeyCode::Char('j') => {
+                    if self.selected_sub_task >= selected_list.tasks[selected_list.selected].sub_tasks.len() {
+                        self.selected_sub_task = 0;
+                        selected_list.next_task();
+                    } else {
+                        self.selected_sub_task += 1;
+                    }
+                }
                 KeyCode::Char('a') => self.new_task(),
                 KeyCode::Char('e') => self.edit_task(task_lists),
                 KeyCode::Char('m') => self.mark_task(task_lists),
                 KeyCode::Char('d') => self.delete_task(task_lists),
+                KeyCode::Right => selected_list.tasks[selected_list.selected].expanded = !selected_list.tasks[selected_list.selected].expanded,
                 //KeyCode::Char('s') => self.save_data(task_lists),
                 //KeyCode::Char('S') => self.load_data(task_lists),
                 _ => input_captured = false,
@@ -173,6 +207,15 @@ impl TaskListTab {
                 None => self.load_data("list.json", task_lists),
                 Some(filename) => self.load_data(filename, task_lists),
             }
+            /*
+            Some("export") => match command.next() {
+                Some(num_str) => {
+                    num_str.parse::<usize>().or(Err(TaskCommandError::NotANumber))?;
+                    Ok(CommandRequest::None)
+                }
+                None => Err(TaskCommandError::MissingField),
+            }
+            */
             None => Ok(CommandRequest::SetActive),
             Some(_) => Err(TaskCommandError::UnknownCommand),
         }
@@ -296,22 +339,45 @@ impl TaskListTab {
 
             let [mark_area, desc_area, date_area, duration_area] = horizontal.areas(tasks_inner_area);
             Span::styled(
-                format!("[{}] ",task.status.get_symbol()),
+                format!("[{}] ", task.status.get_symbol()),
                 if index == selected_list.selected {THEME.task_selected} else {THEME.task}
             ).render(mark_area, buf);
             Span::styled(
                 format!(" {} ", task.name),
-                if index == selected_list.selected {THEME.task_selected} else {THEME.task}
+                if index == selected_list.selected && self.selected_sub_task == 0 {THEME.task_selected} else {THEME.task}
             ).render(desc_area, buf);
             Span::from(format!(" {} ", disp_md(task.date))).render(date_area, buf);
             Span::from(format!(" {} ", task.duration)).render(duration_area, buf);
 
             tasks_inner_area = tasks_inner_area.offset(Offset {x: 0, y: 1});
 
-            for (sub_index, sub_task) in task.sub_tasks.iter().enumerate() {
-                let [mark_area, desc_area, date_area, duration_area] = horizontal.areas(tasks_inner_area);
-                Span::from(format!(" {} ", sub_task.name)).render(desc_area, buf);
-                tasks_inner_area = tasks_inner_area.offset(Offset {x: 0, y: 1});
+            if task.expanded {
+                for (sub_index, sub_task) in task.sub_tasks.iter().enumerate() {
+                    let [mark_area, desc_area, date_area, duration_area] = horizontal.areas(tasks_inner_area);
+                    Line::from(vec![
+                        Span::from(if sub_index == task.sub_tasks.len() - 1 {" └─"} else {" ├─"})
+                            .style(if index == selected_list.selected && self.selected_sub_task >= sub_index + 1 {
+                                THEME.task_selected
+                            } else {
+                                THEME.task
+                            }),
+                        Span::from(if sub_index == task.sub_tasks.len() - 1 {"─"} else {"─"})
+                            .style(if index == selected_list.selected && sub_index + 1 == self.selected_sub_task {
+                                THEME.task_selected
+                            } else {
+                                THEME.task
+                            }),
+                        ])
+                        .render(mark_area, buf);
+                    Span::from(format!(" {} ", sub_task.name))
+                        .style(if index == selected_list.selected && sub_index + 1 == self.selected_sub_task {
+                            THEME.task_selected
+                        } else {
+                            THEME.task
+                        })
+                        .render(desc_area, buf);
+                    tasks_inner_area = tasks_inner_area.offset(Offset {x: 0, y: 1});
+                }
             }
         }
 
