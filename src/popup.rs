@@ -143,9 +143,8 @@ impl TaskEditorPopup {
                     self.submit_date();
                 } else {
                     self.status = PopupStatus::Confirmed;
+                    self.task.name = self.desc_field.take();
                 }
-
-                self.task.name = self.desc_field.take();
             }
             KeyCode::Esc => self.status = PopupStatus::Closed,
             KeyCode::Tab => self.selected_field.next(),
