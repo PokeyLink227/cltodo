@@ -129,7 +129,7 @@ impl App {
                 if key.kind == event::KeyEventKind::Press {
                     if !self.dispatch_input(key.code) {
                         match key.code {
-                            KeyCode::Char('q') => self.mode = RunningMode::Exiting,
+                            KeyCode::Char('q') => self.quit(),
                             KeyCode::Char('n') => self.next_tab(),
                             KeyCode::Char('N') => self.previous_tab(),
                             KeyCode::Char(':') => {
@@ -193,12 +193,16 @@ impl App {
             "calendar" | "c"=> self.current_tab = Tab::Calendar,
             "options" | "o" => self.current_tab = Tab::Options,
             "profile" | "p" => self.current_tab = Tab::Profile,
-            "quit" | "q" => self.mode = RunningMode::Exiting,
+            "quit" | "q" => self.quit(),
             _ => {
                 self.frames_since_error = Some(0);
                 self.error_str = format!("Unknown Command: {}", self.command_str);
             }
         }
+    }
+
+    fn quit(&mut self) {
+        self.mode = RunningMode::Exiting;
     }
 
     fn next_tab(&mut self) {
