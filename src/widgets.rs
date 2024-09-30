@@ -28,6 +28,10 @@ impl TextEntry {
         std::mem::take(&mut self.text)
     }
 
+    pub fn set_text(&mut self, new_text: String) {
+        self.text = new_text;
+    }
+
     pub fn clear(&mut self) {
         self.text.clear();
         self.move_cursor_home();

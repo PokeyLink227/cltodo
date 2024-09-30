@@ -163,6 +163,8 @@ impl TaskEditorPopup {
 
     pub fn edit_task(&mut self, task: Task) {
         self.task = task;
+        self.desc_field.set_text(self.task.name.clone());
+        self.desc_field.move_cursor_end();
         self.status = PopupStatus::InUse;
         self.task_source = TaskSource::Existing;
     }
