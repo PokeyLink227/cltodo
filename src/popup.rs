@@ -171,7 +171,8 @@ impl TaskEditorPopup {
             THEME.popup
         }
     }
-
+    
+    // consumes date entry string and updates date if pattern is valid
     fn submit_date(&mut self) {
         match self.parse_date() {
             None => {}
@@ -183,7 +184,8 @@ impl TaskEditorPopup {
 
     fn parse_date(&mut self) -> Option<NaiveDate> {
         let today = chrono::offset::Local::now().date_naive();
-
+        
+        // +d adds d days to todays date
         if self.date_entry.chars().nth(0)? == '+' {
             today.checked_add_days(Days::new(self
                                              .date_entry
@@ -191,6 +193,7 @@ impl TaskEditorPopup {
                                              .parse::<u64>()
                                              .ok()?
                                              ))
+        // -d adds d days to todays date
         } else if self.date_entry.chars().nth(0)? == '-' {
             today.checked_sub_days(Days::new(self
                                              .date_entry
@@ -198,12 +201,14 @@ impl TaskEditorPopup {
                                              .parse::<u64>()
                                              .ok()?
                                              ))
+        // mmdd sets date to (current_year, mm, dd)
         } else if self.date_entry.len() == 4 {
             NaiveDate::from_ymd_opt(
                 today.year(),
                 self.date_entry.get(0..2)?.parse::<u32>().ok()?,
                 self.date_entry.get(2..4)?.parse::<u32>().ok()?
                 )
+        // yyyymmdd sets date to (yyyy, mm, dd)
         } else if self.date_entry.len() == 8 {
             NaiveDate::from_ymd_opt(
                 self.date_entry.get(0..4)?.parse::<i32>().ok()?,
