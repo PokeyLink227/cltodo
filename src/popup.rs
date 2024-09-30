@@ -1,7 +1,10 @@
 use ratatui::{
     prelude::*,
     widgets::*,
-    layout::Flex,
+    layout::{
+        Offset,
+        Flex,
+    },
 };
 use crossterm::event::{KeyCode};
 use chrono::{
@@ -12,6 +15,7 @@ use chrono::{
 use crate::{
     theme::{THEME},
     tabs::{Task, TaskStatus, disp_md},
+    widgets::TextEntry,
 };
 
 #[derive(Default, PartialEq)]
@@ -30,8 +34,8 @@ enum TaskEditorField {
     Status,
     Date,
     Duration,
-    Cancel,
-    Confirm,
+    //Cancel,
+    //Confirm,
 }
 
 impl TaskEditorField {
@@ -40,20 +44,20 @@ impl TaskEditorField {
             TaskEditorField::Description => TaskEditorField::Status,
             TaskEditorField::Status => TaskEditorField::Date,
             TaskEditorField::Date => TaskEditorField::Duration,
-            TaskEditorField::Duration => TaskEditorField::Cancel,
-            TaskEditorField::Cancel => TaskEditorField::Confirm,
-            TaskEditorField::Confirm => TaskEditorField::Description,
+            TaskEditorField::Duration => TaskEditorField::Description,
+            //TaskEditorField::Cancel => TaskEditorField::Confirm,
+            //TaskEditorField::Confirm => TaskEditorField::Description,
         }
     }
 
     fn previous(&mut self) {
         *self = match self {
-            TaskEditorField::Description => TaskEditorField::Confirm,
+            TaskEditorField::Description => TaskEditorField::Duration,
             TaskEditorField::Status => TaskEditorField::Description,
             TaskEditorField::Date => TaskEditorField::Status,
             TaskEditorField::Duration => TaskEditorField::Date,
-            TaskEditorField::Cancel => TaskEditorField::Duration,
-            TaskEditorField::Confirm => TaskEditorField::Cancel,
+            //TaskEditorField::Cancel => TaskEditorField::Duration,
+            //TaskEditorField::Confirm => TaskEditorField::Cancel,
         }
     }
 }
@@ -75,8 +79,10 @@ pub struct TaskEditorPopup {
     task: Task,
     selected_field: TaskEditorField,
 
+    desc_field: TextEntry,
+
     editing_date: bool,
-    date_entry: String,
+    date_field: TextEntry,
 }
 
 impl TaskEditorPopup {
@@ -85,10 +91,13 @@ impl TaskEditorPopup {
 
         match self.selected_field {
             TaskEditorField::Description => match key {
-                KeyCode::Char(c) => self.task.name.push(c),
-                KeyCode::Backspace => { self.task.name.pop(); },
+                KeyCode::Char(c) => self.desc_field.insert(c),
+                KeyCode::Backspace => self.desc_field.remove(),
+                KeyCode::Left => self.desc_field.move_cursor_left(),
+                KeyCode::Right => self.desc_field.move_cursor_right(),
                 _ => input_captured = false,
             },
+            /*
             TaskEditorField::Cancel => match key {
                 KeyCode::Char('e') => self.status = PopupStatus::Canceled,
                 _ => input_captured = false,
@@ -97,6 +106,7 @@ impl TaskEditorPopup {
                 KeyCode::Char('e') => self.status = PopupStatus::Confirmed,
                 _ => input_captured = false,
             },
+            */
             TaskEditorField::Status => match key {
                 KeyCode::Char('1') => self.task.status = TaskStatus::NotStarted,
                 KeyCode::Char('2') => self.task.status = TaskStatus::InProgress,
@@ -112,13 +122,13 @@ impl TaskEditorPopup {
                     self.submit_date();
                 }
                 KeyCode::Backspace => if self.editing_date {
-                    self.date_entry.pop();
+                    self.date_field.remove();
                 }
                 KeyCode::Char(c)
                     if c >= '0' && c <= '9' || c == '+' || c == '-' =>
                 {
                     self.editing_date = true;
-                    self.date_entry.push(c);
+                    self.date_field.insert(c);
                 }
                 _ => input_captured = false,
             },
@@ -134,6 +144,8 @@ impl TaskEditorPopup {
                 } else {
                     self.status = PopupStatus::Confirmed;
                 }
+
+                self.task.name = self.desc_field.take();
             }
             KeyCode::Esc => self.status = PopupStatus::Closed,
             KeyCode::Tab => self.selected_field.next(),
@@ -151,6 +163,8 @@ impl TaskEditorPopup {
 
     pub fn edit_task(&mut self, task: Task) {
         self.task = task;
+        self.desc_field.set_text(self.task.name.clone());
+        self.desc_field.move_cursor_end();
         self.status = PopupStatus::InUse;
         self.task_source = TaskSource::Existing;
     }
@@ -179,41 +193,43 @@ impl TaskEditorPopup {
             Some(d) => self.task.date = d,
         }
         self.editing_date = false;
-        self.date_entry.clear();
+        self.date_field.clear();
     }
 
     fn parse_date(&mut self) -> Option<NaiveDate> {
         let today = chrono::offset::Local::now().date_naive();
         
         // +d adds d days to todays date
-        if self.date_entry.chars().nth(0)? == '+' {
+        if self.date_field.get_str().chars().nth(0)? == '+' {
             today.checked_add_days(Days::new(self
-                                             .date_entry
+                                             .date_field
+                                             .get_str()
                                              .get(1..)?
                                              .parse::<u64>()
                                              .ok()?
                                              ))
         // -d adds d days to todays date
-        } else if self.date_entry.chars().nth(0)? == '-' {
+        } else if self.date_field.get_str().chars().nth(0)? == '-' {
             today.checked_sub_days(Days::new(self
-                                             .date_entry
+                                             .date_field
+                                             .get_str()
                                              .get(1..)?
                                              .parse::<u64>()
                                              .ok()?
                                              ))
         // mmdd sets date to (current_year, mm, dd)
-        } else if self.date_entry.len() == 4 {
+        } else if self.date_field.get_str().len() == 4 {
             NaiveDate::from_ymd_opt(
                 today.year(),
-                self.date_entry.get(0..2)?.parse::<u32>().ok()?,
-                self.date_entry.get(2..4)?.parse::<u32>().ok()?
+                self.date_field.get_str().get(0..2)?.parse::<u32>().ok()?,
+                self.date_field.get_str().get(2..4)?.parse::<u32>().ok()?
                 )
         // yyyymmdd sets date to (yyyy, mm, dd)
-        } else if self.date_entry.len() == 8 {
+        } else if self.date_field.get_str().len() == 8 {
             NaiveDate::from_ymd_opt(
-                self.date_entry.get(0..4)?.parse::<i32>().ok()?,
-                self.date_entry.get(4..6)?.parse::<u32>().ok()?,
-                self.date_entry.get(6..8)?.parse::<u32>().ok()?
+                self.date_field.get_str().get(0..4)?.parse::<i32>().ok()?,
+                self.date_field.get_str().get(4..6)?.parse::<u32>().ok()?,
+                self.date_field.get_str().get(6..8)?.parse::<u32>().ok()?
                 )
         } else {
             None
@@ -232,6 +248,7 @@ impl Widget for &TaskEditorPopup {
         let window = Block::bordered()
             .style(THEME.popup)
             .border_style(THEME.popup)
+            .border_type(BorderType::Rounded)
             .title(Line::from(if let TaskSource::New = self.task_source {"New Task"} else {"Edit Task"}));
             //.title_bottom(format!(" [Esc] to Cancel [Enter] to Confirm "));
 
@@ -241,7 +258,7 @@ impl Widget for &TaskEditorPopup {
 
         let vert = Layout::vertical([1, 1, 1]);
         let [top_area, mid_area, bot_area] = vert.areas(win_area);
-
+        /*
         let bot_horiz = Layout::horizontal([
             Constraint::Min(0),
             Constraint::Length(10),
@@ -254,6 +271,7 @@ impl Widget for &TaskEditorPopup {
         Paragraph::new(" [Confirm] ")
             .style(self.get_style(TaskEditorField::Confirm))
             .render(quit_area, buf);
+            */
 
         let mid_horiz = Layout::horizontal([
             Constraint::Length(10),
@@ -268,13 +286,21 @@ impl Widget for &TaskEditorPopup {
             .render(status_area, buf);
         Span::styled(
             format!("Date: {}", if self.editing_date {
-                self.date_entry.clone()
+                self.date_field.get_str().to_owned()
             } else {
                 disp_md(self.task.date)
             }),
             self.get_style(TaskEditorField::Date)
         )
             .render(date_area, buf);
+        if self.selected_field == TaskEditorField::Date && self.editing_date {
+            Span::from("█")
+                .style(THEME.popup_selected)
+                .render(
+                    date_area.offset(Offset {x: 6 + self.date_field.get_cursor_pos() as i32, y:0}),
+                    buf);
+        }
+
         Span::styled(
             format!("Dur: {}", self.task.duration),
             self.get_style(TaskEditorField::Duration)
@@ -288,11 +314,18 @@ impl Widget for &TaskEditorPopup {
         let [text_area] = top_horiz.areas(top_area);
         Line::from(vec![
             Span::from("Desc: "),
-            Span::from(self.task.name.as_str()),
+            Span::from(self.desc_field.get_str()),
         ])
             .style(self.get_style(TaskEditorField::Description))
             .render(text_area, buf);
 
+        if self.selected_field == TaskEditorField::Description {
+            Span::from("█")
+                .style(THEME.popup_selected)
+                .render(
+                    text_area.offset(Offset {x: 6 + self.desc_field.get_cursor_pos() as i32, y:0}),
+                    buf);
+        }
     }
 
 }

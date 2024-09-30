@@ -26,7 +26,7 @@ pub const THEME: Theme = Theme {
     root: Style::new().fg(WHITE).bg(DARKER_GRAY),
     root_tab_selected: Style::new().fg(YELLOW).bg(DARK_GRAY),
     command_error: Style::new().fg(WHITE).bg(RED),
-    popup: Style::new().fg(WHITE).bg(DARKER_GRAY),
+    popup: Style::new().fg(WHITE),
     popup_focused: Style::new().fg(WHITE).bg(DARK_GRAY),
     popup_selected: Style::new().fg(YELLOW).bg(DARK_GRAY),
     task: Style::new().fg(WHITE),

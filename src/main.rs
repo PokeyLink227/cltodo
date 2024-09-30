@@ -13,13 +13,17 @@ use ratatui::{
     widgets::{
         Block, Paragraph, Widget,
     },
-    layout::Flex,
+    layout::{
+        Flex,
+        Offset,
+    },
 };
 use chrono::{NaiveDate};
 use crate::{
     tabs::*,
     theme::{THEME},
     popup::*,
+    widgets::TextEntry,
 };
 
 mod tui;
@@ -58,7 +62,7 @@ pub struct App {
     mode: RunningMode,
     current_tab: Tab,
 
-    command_str: String,
+    command_field: TextEntry,
     error_str: String,
     frames_since_error: Option<u32>,
 
@@ -91,7 +95,11 @@ impl Widget for &App {
             Tab::Profile => self.profile_tab.render(canvas, buf, &self.profile),
         }
         if self.mode == RunningMode::Command {
-            Line::from(vec![Span::from(":"), Span::from(&self.command_str)]).render(bottom_bar, buf);
+            Line::from(vec![Span::from(":"), Span::from(self.command_field.get_str())]).render(bottom_bar, buf);
+            Span::from("█")
+                .render(
+                    bottom_bar.offset(Offset {x: 1 + self.command_field.get_cursor_pos() as i32, y:0}),
+                    buf);
         } else if let Some(_) = self.frames_since_error {
             Span::from(format!("Error: {}", self.error_str)).style(THEME.command_error).render(bottom_bar, buf);
         } else {
@@ -129,13 +137,13 @@ impl App {
                 if key.kind == event::KeyEventKind::Press {
                     if !self.dispatch_input(key.code) {
                         match key.code {
-                            KeyCode::Char('q') => self.mode = RunningMode::Exiting,
+                            KeyCode::Char('q') => self.quit(),
                             KeyCode::Char('n') => self.next_tab(),
                             KeyCode::Char('N') => self.previous_tab(),
                             KeyCode::Char(':') => {
                                 self.mode = RunningMode::Command;
                                 self.frames_since_error = None;
-                                self.command_str.clear();
+                                self.command_field.clear();
                             }
                             _ => {},
                         }
@@ -149,15 +157,19 @@ impl App {
     fn dispatch_input(&mut self, key: KeyCode) -> bool {
         if self.mode == RunningMode::Command {
             match key {
-                KeyCode::Char(c) => self.command_str.push(c),
-                KeyCode::Backspace => _ = self.command_str.pop(),
+                KeyCode::Char(c) => self.command_field.insert(c),
+                KeyCode::Backspace => self.command_field.remove(),
                 KeyCode::Enter => {
                     self.mode = RunningMode::Running;
                     self.process_command();
-                },
+                    self.command_field.move_cursor_home();
+                }
                 KeyCode::Esc => {
                     self.mode = RunningMode::Running;
-                },
+                    self.command_field.move_cursor_home();
+                }
+                KeyCode::Left => self.command_field.move_cursor_left(),
+                KeyCode::Right => self.command_field.move_cursor_right(),
                 _ => {},
             }
             true
@@ -172,12 +184,12 @@ impl App {
     }
 
     fn process_command(&mut self) {
-        let mut parsed_command = self.command_str.split(' ');
+        let mut parsed_command = self.command_field.get_str().split(' ');
         match parsed_command.next().unwrap() {
             "tasks" | "t" => match self.task_list_tab.process_command(parsed_command, &mut self.task_lists) {
                 Err(TaskCommandError::UnknownCommand) => {
                     self.frames_since_error = Some(0);
-                    self.error_str = format!("Unknown Command: \"{}\"", self.command_str);
+                    self.error_str = format!("Unknown Command: \"{}\"", self.command_field.get_str());
                 }
                 Err(TaskCommandError::InvalidFilePath) => {
                     self.frames_since_error = Some(0);
@@ -193,12 +205,16 @@ impl App {
             "calendar" | "c"=> self.current_tab = Tab::Calendar,
             "options" | "o" => self.current_tab = Tab::Options,
             "profile" | "p" => self.current_tab = Tab::Profile,
-            "quit" | "q" => self.mode = RunningMode::Exiting,
+            "quit" | "q" => self.quit(),
             _ => {
                 self.frames_since_error = Some(0);
-                self.error_str = format!("Unknown Command: {}", self.command_str);
+                self.error_str = format!("Unknown Command: {}", self.command_field.get_str());
             }
         }
+    }
+
+    fn quit(&mut self) {
+        self.mode = RunningMode::Exiting;
     }
 
     fn next_tab(&mut self) {
@@ -271,7 +287,7 @@ fn main() -> io::Result<()> {
     let mut app = App {
         mode: RunningMode::Running,
         current_tab: Tab::TaskList,
-        command_str: String::new(),
+        command_field: TextEntry::default(),
         error_str: String::new(),
         frames_since_error: None,
         task_lists: vec![
