@@ -274,7 +274,7 @@ impl TaskListTab {
 
         let tasks_border = Block::bordered()
             .border_style(THEME.task_border)
-            .border_type(BorderType::Thick);
+            .border_type(BorderType::Rounded);
 
         let mut tasks_inner_area = tasks_border.inner(tasks_area);
 
@@ -283,7 +283,7 @@ impl TaskListTab {
         Block::bordered()
             .style(THEME.task_selected)
             .borders(Borders::TOP)
-            .border_type(BorderType::Thick)
+            .border_type(BorderType::Rounded)
             .render(highlight_pos, buf);
 
         let [_, _, date_area, duration_area] = horizontal.areas(tasks_area);
@@ -342,7 +342,7 @@ impl CalendarTab {
         let cal_block = Block::bordered()
             .border_style(THEME.task_border)
             .title_style(THEME.task_title)
-            .border_type(BorderType::Thick)
+            .border_type(BorderType::Rounded)
             .title("Monthly View");
         self.cal.render(cal_block.inner(cal).offset(Offset {x: 1, y: 0}), buf);
         cal_block.render(cal, buf);
@@ -353,7 +353,7 @@ impl CalendarTab {
             .title("Weekly View")
             .border_style(THEME.task_border)
             .title_style(THEME.task_title)
-            .border_type(BorderType::Thick)
+            .border_type(BorderType::Rounded)
             .render(weekly, buf);
     }
 }
@@ -375,7 +375,7 @@ impl OptionsTab {
 
     pub fn render(&self, area: Rect, buf: &mut Buffer, options: &Options) {
         let border = Block::bordered()
-            .border_type(BorderType::Thick)
+            .border_type(BorderType::Rounded)
             .style(THEME.task_border);
         Paragraph::new(
             Text::from(vec![

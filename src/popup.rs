@@ -1,6 +1,14 @@
 use ratatui::{
     prelude::*,
-    widgets::*,
+    widgets::{
+        Clear,
+        BorderType,
+        Block,
+        block::{
+            Title,
+            Position,
+        },
+    },
     layout::{
         Offset,
         Flex,
@@ -174,6 +182,7 @@ impl TaskEditorPopup {
         self.task_source = TaskSource::New;
 
         self.task.date = chrono::offset::Local::now().date_naive();
+        self.desc_field.move_cursor_end();
     }
 
     fn get_style(&self, field: TaskEditorField) -> Style {
@@ -248,8 +257,11 @@ impl Widget for &TaskEditorPopup {
             .style(THEME.popup)
             .border_style(THEME.popup)
             .border_type(BorderType::Rounded)
-            .title(Line::from(if let TaskSource::New = self.task_source {"New Task"} else {"Edit Task"}));
-            //.title_bottom(format!(" [Esc] to Cancel [Enter] to Confirm "));
+            .title(Line::from(if let TaskSource::New = self.task_source {"New Task"} else {"Edit Task"}))
+            .title(
+                Title::from(format!(" [Esc] to Cancel [Enter] to Confirm "))
+                    .alignment(Alignment::Right)
+                    .position(Position::Bottom));
 
         let win_area = window.inner(area);
         Clear.render(win_area, buf);
