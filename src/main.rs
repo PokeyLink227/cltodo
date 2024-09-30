@@ -13,7 +13,10 @@ use ratatui::{
     widgets::{
         Block, Paragraph, Widget,
     },
-    layout::Flex,
+    layout::{
+        Flex,
+        Offset,
+    },
 };
 use chrono::{NaiveDate};
 use crate::{
@@ -61,6 +64,7 @@ pub struct App {
     command_str: String,
     error_str: String,
     frames_since_error: Option<u32>,
+    command_cursor_pos: u16,
 
     task_lists: Vec<TaskList>,
     profile: UserProfile,
@@ -92,6 +96,10 @@ impl Widget for &App {
         }
         if self.mode == RunningMode::Command {
             Line::from(vec![Span::from(":"), Span::from(&self.command_str)]).render(bottom_bar, buf);
+            Span::from("█")
+                .render(
+                    bottom_bar.offset(Offset {x: 1 + self.command_cursor_pos as i32, y:0}),
+                    buf);
         } else if let Some(_) = self.frames_since_error {
             Span::from(format!("Error: {}", self.error_str)).style(THEME.command_error).render(bottom_bar, buf);
         } else {
@@ -149,14 +157,24 @@ impl App {
     fn dispatch_input(&mut self, key: KeyCode) -> bool {
         if self.mode == RunningMode::Command {
             match key {
-                KeyCode::Char(c) => self.command_str.push(c),
-                KeyCode::Backspace => _ = self.command_str.pop(),
+                KeyCode::Char(c) => {
+                    self.command_str.push(c);
+                    self.command_cursor_pos += 1;
+                }
+                KeyCode::Backspace => {
+                    self.command_str.pop();
+                    if self.command_cursor_pos > 0 {
+                        self.command_cursor_pos -= 1;
+                    }
+                }
                 KeyCode::Enter => {
                     self.mode = RunningMode::Running;
                     self.process_command();
+                    self.command_cursor_pos = 0;
                 },
                 KeyCode::Esc => {
                     self.mode = RunningMode::Running;
+                    self.command_cursor_pos = 0;
                 },
                 _ => {},
             }
@@ -278,6 +296,7 @@ fn main() -> io::Result<()> {
         command_str: String::new(),
         error_str: String::new(),
         frames_since_error: None,
+        command_cursor_pos: 0,
         task_lists: vec![
             TaskList {name: "cl-todo stuff".to_string(), selected: 0, tasks: vec![
                 Task {name: "dynamic keybinds bar".to_string(), status: TaskStatus::InProgress, duration: Duration::default(), date: NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(), sub_tasks: vec![

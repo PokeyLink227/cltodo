@@ -1,7 +1,10 @@
 use ratatui::{
     prelude::*,
     widgets::*,
-    layout::Flex,
+    layout::{
+        Offset,
+        Flex,
+    },
 };
 use crossterm::event::{KeyCode};
 use chrono::{
@@ -30,8 +33,8 @@ enum TaskEditorField {
     Status,
     Date,
     Duration,
-    Cancel,
-    Confirm,
+    //Cancel,
+    //Confirm,
 }
 
 impl TaskEditorField {
@@ -40,20 +43,20 @@ impl TaskEditorField {
             TaskEditorField::Description => TaskEditorField::Status,
             TaskEditorField::Status => TaskEditorField::Date,
             TaskEditorField::Date => TaskEditorField::Duration,
-            TaskEditorField::Duration => TaskEditorField::Cancel,
-            TaskEditorField::Cancel => TaskEditorField::Confirm,
-            TaskEditorField::Confirm => TaskEditorField::Description,
+            TaskEditorField::Duration => TaskEditorField::Description,
+            //TaskEditorField::Cancel => TaskEditorField::Confirm,
+            //TaskEditorField::Confirm => TaskEditorField::Description,
         }
     }
 
     fn previous(&mut self) {
         *self = match self {
-            TaskEditorField::Description => TaskEditorField::Confirm,
+            TaskEditorField::Description => TaskEditorField::Duration,
             TaskEditorField::Status => TaskEditorField::Description,
             TaskEditorField::Date => TaskEditorField::Status,
             TaskEditorField::Duration => TaskEditorField::Date,
-            TaskEditorField::Cancel => TaskEditorField::Duration,
-            TaskEditorField::Confirm => TaskEditorField::Cancel,
+            //TaskEditorField::Cancel => TaskEditorField::Duration,
+            //TaskEditorField::Confirm => TaskEditorField::Cancel,
         }
     }
 }
@@ -75,6 +78,9 @@ pub struct TaskEditorPopup {
     task: Task,
     selected_field: TaskEditorField,
 
+    desc_cursor_pos: u16,
+    date_cursor_pos: u16,
+
     editing_date: bool,
     date_entry: String,
 }
@@ -85,10 +91,19 @@ impl TaskEditorPopup {
 
         match self.selected_field {
             TaskEditorField::Description => match key {
-                KeyCode::Char(c) => self.task.name.push(c),
-                KeyCode::Backspace => { self.task.name.pop(); },
+                KeyCode::Char(c) => {
+                    self.task.name.push(c);
+                    self.desc_cursor_pos += 1;
+                }
+                KeyCode::Backspace => {
+                    self.task.name.pop();
+                    if self.desc_cursor_pos > 0 {
+                        self.desc_cursor_pos -= 1;
+                    }
+                }
                 _ => input_captured = false,
             },
+            /*
             TaskEditorField::Cancel => match key {
                 KeyCode::Char('e') => self.status = PopupStatus::Canceled,
                 _ => input_captured = false,
@@ -97,6 +112,7 @@ impl TaskEditorPopup {
                 KeyCode::Char('e') => self.status = PopupStatus::Confirmed,
                 _ => input_captured = false,
             },
+            */
             TaskEditorField::Status => match key {
                 KeyCode::Char('1') => self.task.status = TaskStatus::NotStarted,
                 KeyCode::Char('2') => self.task.status = TaskStatus::InProgress,
@@ -113,12 +129,16 @@ impl TaskEditorPopup {
                 }
                 KeyCode::Backspace => if self.editing_date {
                     self.date_entry.pop();
+                    if self.date_cursor_pos > 0 {
+                        self.date_cursor_pos -= 1;
+                    }
                 }
                 KeyCode::Char(c)
                     if c >= '0' && c <= '9' || c == '+' || c == '-' =>
                 {
                     self.editing_date = true;
                     self.date_entry.push(c);
+                    self.date_cursor_pos += 1;
                 }
                 _ => input_captured = false,
             },
@@ -179,6 +199,7 @@ impl TaskEditorPopup {
         }
         self.editing_date = false;
         self.date_entry.clear();
+        self.date_cursor_pos = 0;
     }
 
     fn parse_date(&mut self) -> Option<NaiveDate> {
@@ -227,6 +248,7 @@ impl Widget for &TaskEditorPopup {
         let window = Block::bordered()
             .style(THEME.popup)
             .border_style(THEME.popup)
+            .border_type(BorderType::Rounded)
             .title(Line::from(if let TaskSource::New = self.task_source {"New Task"} else {"Edit Task"}));
             //.title_bottom(format!(" [Esc] to Cancel [Enter] to Confirm "));
 
@@ -236,7 +258,7 @@ impl Widget for &TaskEditorPopup {
 
         let vert = Layout::vertical([1, 1, 1]);
         let [top_area, mid_area, bot_area] = vert.areas(win_area);
-
+        /*
         let bot_horiz = Layout::horizontal([
             Constraint::Min(0),
             Constraint::Length(10),
@@ -249,6 +271,7 @@ impl Widget for &TaskEditorPopup {
         Paragraph::new(" [Confirm] ")
             .style(self.get_style(TaskEditorField::Confirm))
             .render(quit_area, buf);
+            */
 
         let mid_horiz = Layout::horizontal([
             Constraint::Length(10),
@@ -270,6 +293,14 @@ impl Widget for &TaskEditorPopup {
             self.get_style(TaskEditorField::Date)
         )
             .render(date_area, buf);
+        if self.selected_field == TaskEditorField::Date && self.editing_date {
+            Span::from("█")
+                .style(THEME.popup_selected)
+                .render(
+                    date_area.offset(Offset {x: 6 + self.date_cursor_pos as i32, y:0}),
+                    buf);
+        }
+
         Span::styled(
             format!("Dur: {}", self.task.duration),
             self.get_style(TaskEditorField::Duration)
@@ -288,6 +319,13 @@ impl Widget for &TaskEditorPopup {
             .style(self.get_style(TaskEditorField::Description))
             .render(text_area, buf);
 
+        if self.selected_field == TaskEditorField::Description {
+            Span::from("█")
+                .style(THEME.popup_selected)
+                .render(
+                    text_area.offset(Offset {x: 6 + self.desc_cursor_pos as i32, y:0}),
+                    buf);
+        }
     }
 
 }
