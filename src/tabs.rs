@@ -356,7 +356,7 @@ impl TaskListTab {
                     let [mark_area, desc_area, date_area, duration_area] = horizontal.areas(tasks_inner_area);
                     Line::from(vec![
                         Span::from(if sub_index == task.sub_tasks.len() - 1 {" └─"} else {" ├─"})
-                            .style(if index == selected_list.selected && self.selected_sub_task >= sub_index + 1 {
+                            .style(if index == selected_list.selected && self.selected_sub_task == sub_index + 1 {
                                 THEME.task_selected
                             } else {
                                 THEME.task

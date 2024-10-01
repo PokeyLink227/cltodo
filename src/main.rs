@@ -295,6 +295,11 @@ fn main() -> io::Result<()> {
                 Task {name: "dynamic keybinds bar".to_string(), status: TaskStatus::InProgress, duration: Duration::default(), date: NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(), sub_tasks: vec![
                     Task {name: "reduce rendering time (might use memoization from layout)".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: NaiveDate::default(), sub_tasks: Vec::new(), expanded: false},
                     Task {name: "reduce rendering time (might use memoization from layout)".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: NaiveDate::default(), sub_tasks: Vec::new(), expanded: false},
+                    Task {name: "reduce rendering time (might use memoization from layout)".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: NaiveDate::default(), sub_tasks: Vec::new(), expanded: false},
+                    Task {name: "reduce rendering time (might use memoization from layout)".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: NaiveDate::default(), sub_tasks: Vec::new(), expanded: false},
+                    Task {name: "reduce rendering time (might use memoization from layout)".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: NaiveDate::default(), sub_tasks: Vec::new(), expanded: false},
+                    Task {name: "reduce rendering time (might use memoization from layout)".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: NaiveDate::default(), sub_tasks: Vec::new(), expanded: false},
+                    Task {name: "reduce rendering time (might use memoization from layout)".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: NaiveDate::default(), sub_tasks: Vec::new(), expanded: false},
                 ], expanded: true},
                 Task {name: "add background to popup".to_string(), status: TaskStatus::Finished, duration: Duration::default(), date: NaiveDate::from_ymd_opt(2024, 7, 8).unwrap(), sub_tasks: Vec::new(), expanded: false},
                 ])),
