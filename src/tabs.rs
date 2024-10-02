@@ -274,7 +274,12 @@ impl TaskListTab {
         }
 
         let list = &mut task_lists[self.selected];
-        list.tasks[list.selected].status.cycle_next();
+        let task = &mut list.tasks[list.selected];
+        if task.sub_tasks.len() > 0 && task.expanded && self.selected_sub_task != 0 {
+            task.sub_tasks[self.selected_sub_task - 1].status.cycle_next();
+        } else {
+            task.status.cycle_next();
+        }
     }
 
     fn delete_task(&mut self, task_lists: &mut Vec<TaskList>) {
@@ -408,50 +413,46 @@ impl TaskListTab {
             tasks_inner_area = tasks_inner_area.offset(Offset { x: 0, y: 1 });
 
             if task.expanded {
+                let horizontal = Layout::horizontal([
+                    Constraint::Length(5),
+                    Constraint::Length(3),
+                    Constraint::Min(20),
+                    Constraint::Length(8),
+                    Constraint::Length(10),
+                ]);
+
                 for (sub_index, sub_task) in task.sub_tasks.iter().enumerate() {
-                    let [mark_area, desc_area, date_area, duration_area] =
+                    let [tree_area, mark_area, desc_area, date_area, duration_area] =
                         horizontal.areas(tasks_inner_area);
+                    let style = if index == selected_list.selected
+                        && self.selected_sub_task == sub_index + 1
+                    {
+                        THEME.task_selected
+                    } else {
+                        THEME.task
+                    };
                     Line::from(vec![
                         Span::from(if sub_index == task.sub_tasks.len() - 1 {
                             " └─"
                         } else {
                             " ├─"
                         })
-                        .style(
-                            if index == selected_list.selected
-                                && self.selected_sub_task == sub_index + 1
-                            {
-                                THEME.task_selected
-                            } else {
-                                THEME.task
-                            },
-                        ),
+                        .style(style),
                         Span::from(if sub_index == task.sub_tasks.len() - 1 {
                             "─"
                         } else {
                             "─"
                         })
-                        .style(
-                            if index == selected_list.selected
-                                && sub_index + 1 == self.selected_sub_task
-                            {
-                                THEME.task_selected
-                            } else {
-                                THEME.task
-                            },
-                        ),
+                        .style(style),
                     ])
+                    .render(tree_area, buf);
+                    Span::styled(
+                        format!("[{}]", sub_task.status.get_symbol()),
+                        style,
+                    )
                     .render(mark_area, buf);
                     Span::from(format!(" {} ", sub_task.name))
-                        .style(
-                            if index == selected_list.selected
-                                && sub_index + 1 == self.selected_sub_task
-                            {
-                                THEME.task_selected
-                            } else {
-                                THEME.task
-                            },
-                        )
+                        .style(style)
                         .render(desc_area, buf);
                     tasks_inner_area = tasks_inner_area.offset(Offset { x: 0, y: 1 });
                 }
