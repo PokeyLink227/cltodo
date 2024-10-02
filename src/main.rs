@@ -106,6 +106,11 @@ impl Widget for &App {
 
 impl App {
     pub fn run(&mut self, terminal: &mut tui::Tui) -> io::Result<()> {
+        // initialization
+        self.command_field.set_text("t load".to_string());
+        self.process_command();
+
+        // main loop
         while self.mode != RunningMode::Exiting {
             terminal.draw(|frame| self.render_frame(frame))?;
             self.handle_events()?;
@@ -118,6 +123,12 @@ impl App {
                 }
             }
         }
+
+        // clean up
+        self.command_field.set_text("t save".to_string());
+        self.process_command();
+
+        // report no errors
         Ok(())
     }
 
