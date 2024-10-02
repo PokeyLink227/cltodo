@@ -173,7 +173,8 @@ impl TaskListTab {
                         if self.selected_sub_task == 0 {
                             selected_list.previous_task();
                             if selected_list.tasks[selected_list.selected].expanded {
-                                self.selected_sub_task = selected_list.tasks[selected_list.selected].sub_tasks.len();
+                                self.selected_sub_task =
+                                    selected_list.tasks[selected_list.selected].sub_tasks.len();
                             }
                         } else {
                             self.selected_sub_task -= 1;
@@ -181,7 +182,8 @@ impl TaskListTab {
                     } else {
                         selected_list.previous_task();
                         if selected_list.tasks[selected_list.selected].expanded {
-                            self.selected_sub_task = selected_list.tasks[selected_list.selected].sub_tasks.len();
+                            self.selected_sub_task =
+                                selected_list.tasks[selected_list.selected].sub_tasks.len();
                         }
                     }
                 }
@@ -194,7 +196,6 @@ impl TaskListTab {
                             self.selected_sub_task = 0;
                             selected_list.next_task();
                         }
-
                     } else {
                         selected_list.next_task();
                     }
