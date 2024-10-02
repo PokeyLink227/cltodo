@@ -1,22 +1,14 @@
-use std::{
-    io::prelude::*,
-    fs::File,
-    str::Split,
-};
-use ratatui::{
-    prelude::*,
-    widgets::*,
-    layout::{Offset},
-};
-use crossterm::event::{KeyCode};
-use serde::{Deserialize, Serialize};
-use chrono::{Datelike, Weekday, NaiveDate};
 use crate::{
-    CommandRequest,
-    theme::{THEME},
     popup::{PopupStatus, TaskEditorPopup, TaskSource},
-    widgets::{Calendar},
+    theme::THEME,
+    widgets::Calendar,
+    CommandRequest,
 };
+use chrono::{Datelike, NaiveDate, Weekday};
+use crossterm::event::KeyCode;
+use ratatui::{layout::Offset, prelude::*, widgets::*};
+use serde::{Deserialize, Serialize};
+use std::{fs::File, io::prelude::*, str::Split};
 
 #[derive(Default, Copy, Clone, Debug, Deserialize, Serialize)]
 pub struct Duration {
@@ -36,23 +28,25 @@ impl std::fmt::Display for Duration {
 }
 
 pub fn disp_md(date: NaiveDate) -> String {
-    format!("{} {:02}",
+    format!(
+        "{} {:02}",
         match date.month() {
-            1  => "Jan",
-            2  => "Feb",
-            3  => "Mar",
-            4  => "Apr",
-            5  => "May",
-            6  => "Jun",
-            7  => "Jul",
-            8  => "Aug",
-            9  => "Sep",
+            1 => "Jan",
+            2 => "Feb",
+            3 => "Mar",
+            4 => "Apr",
+            5 => "May",
+            6 => "Jun",
+            7 => "Jul",
+            8 => "Aug",
+            9 => "Sep",
             10 => "Oct",
             11 => "Nov",
             12 => "Dec",
-            _  => "ERR",
+            _ => "ERR",
         },
-        date.day(),)
+        date.day(),
+    )
 }
 
 pub enum TaskCommandError {
@@ -123,12 +117,16 @@ impl TaskList {
     }
 
     fn next_task(&mut self) {
-        if self.tasks.is_empty() { return; }
+        if self.tasks.is_empty() {
+            return;
+        }
         self.selected = (self.selected + 1) % self.tasks.len();
     }
 
     fn previous_task(&mut self) {
-        if self.tasks.is_empty() { return; }
+        if self.tasks.is_empty() {
+            return;
+        }
         self.selected = (self.selected + self.tasks.len() - 1) % self.tasks.len();
     }
 }
@@ -153,7 +151,10 @@ impl TaskListTab {
             if PopupStatus::Confirmed == self.new_task_window.status {
                 match self.new_task_window.task_source {
                     TaskSource::New => selected_list.tasks.push(self.new_task_window.take_task()),
-                    TaskSource::Existing => selected_list.tasks[selected_list.selected] = self.new_task_window.take_task(),
+                    TaskSource::Existing => {
+                        selected_list.tasks[selected_list.selected] =
+                            self.new_task_window.take_task()
+                    }
                 }
                 self.new_task_window.status = PopupStatus::Closed;
             }
@@ -164,15 +165,21 @@ impl TaskListTab {
                 KeyCode::Char('k') => {
                     if self.selected_sub_task == 0 {
                         selected_list.previous_task();
-                        if !selected_list.tasks.is_empty() &&  selected_list.tasks[selected_list.selected].expanded {
-                            self.selected_sub_task = selected_list.tasks[selected_list.selected].sub_tasks.len();
+                        if !selected_list.tasks.is_empty()
+                            && selected_list.tasks[selected_list.selected].expanded
+                        {
+                            self.selected_sub_task =
+                                selected_list.tasks[selected_list.selected].sub_tasks.len();
                         }
                     } else {
                         self.selected_sub_task -= 1;
                     }
                 }
                 KeyCode::Char('j') => {
-                    if !selected_list.tasks.is_empty() && self.selected_sub_task >= selected_list.tasks[selected_list.selected].sub_tasks.len() {
+                    if !selected_list.tasks.is_empty()
+                        && self.selected_sub_task
+                            >= selected_list.tasks[selected_list.selected].sub_tasks.len()
+                    {
                         self.selected_sub_task = 0;
                         selected_list.next_task();
                     } else {
@@ -183,7 +190,10 @@ impl TaskListTab {
                 KeyCode::Char('e') => self.edit_task(task_lists),
                 KeyCode::Char('m') => self.mark_task(task_lists),
                 KeyCode::Char('d') => self.delete_task(task_lists),
-                KeyCode::Right => selected_list.tasks[selected_list.selected].expanded = !selected_list.tasks[selected_list.selected].expanded,
+                KeyCode::Right => {
+                    selected_list.tasks[selected_list.selected].expanded =
+                        !selected_list.tasks[selected_list.selected].expanded
+                }
                 //KeyCode::Char('s') => self.save_data(task_lists),
                 //KeyCode::Char('S') => self.load_data(task_lists),
                 _ => input_captured = false,
@@ -193,7 +203,11 @@ impl TaskListTab {
         input_captured
     }
 
-    pub fn process_command(&mut self, mut command: Split<char>, task_lists: &mut Vec<TaskList>) -> Result<CommandRequest, TaskCommandError> {
+    pub fn process_command(
+        &mut self,
+        mut command: Split<char>,
+        task_lists: &mut Vec<TaskList>,
+    ) -> Result<CommandRequest, TaskCommandError> {
         match command.next() {
             Some("new") => {
                 self.new_task();
@@ -202,11 +216,11 @@ impl TaskListTab {
             Some("save") => match command.next() {
                 None => self.save_data("list.json", task_lists),
                 Some(filename) => self.save_data(filename, task_lists),
-            }
+            },
             Some("load") => match command.next() {
                 None => self.load_data("list.json", task_lists),
                 Some(filename) => self.load_data(filename, task_lists),
-            }
+            },
             /*
             Some("export") => match command.next() {
                 Some(num_str) => {
@@ -221,25 +235,33 @@ impl TaskListTab {
         }
     }
 
-    fn load_data(&mut self, filename: &str, task_lists: &mut Vec<TaskList>) -> Result<CommandRequest, TaskCommandError> {
+    fn load_data(
+        &mut self,
+        filename: &str,
+        task_lists: &mut Vec<TaskList>,
+    ) -> Result<CommandRequest, TaskCommandError> {
         let mut file = match File::open(filename) {
             Ok(f) => f,
-            Err(_) => return Err(TaskCommandError::InvalidFilePath)
+            Err(_) => return Err(TaskCommandError::InvalidFilePath),
         };
         let mut data = Vec::new();
         _ = file.read_to_end(&mut data).unwrap();
         let temp: Vec<TaskList> = match serde_json::from_slice(&data) {
             Ok(v) => v,
-            Err(_) => return Err(TaskCommandError::InvalidFileFormat)
+            Err(_) => return Err(TaskCommandError::InvalidFileFormat),
         };
         *task_lists = temp;
         Ok(CommandRequest::None)
     }
 
-    fn save_data(&mut self, filename: &str, task_lists: &mut Vec<TaskList>) -> Result <CommandRequest, TaskCommandError> {
+    fn save_data(
+        &mut self,
+        filename: &str,
+        task_lists: &mut Vec<TaskList>,
+    ) -> Result<CommandRequest, TaskCommandError> {
         let mut file = match File::create(filename) {
             Ok(f) => f,
-            Err(_) => return Err(TaskCommandError::InvalidFilePath)
+            Err(_) => return Err(TaskCommandError::InvalidFilePath),
         };
         let out = serde_json::to_vec(&task_lists).unwrap();
         _ = file.write_all(&out).unwrap();
@@ -247,14 +269,18 @@ impl TaskListTab {
     }
 
     fn mark_task(&mut self, task_lists: &mut Vec<TaskList>) {
-        if task_lists.is_empty() || task_lists[self.selected].tasks.is_empty() { return; }
+        if task_lists.is_empty() || task_lists[self.selected].tasks.is_empty() {
+            return;
+        }
 
         let list = &mut task_lists[self.selected];
         list.tasks[list.selected].status.cycle_next();
     }
 
     fn delete_task(&mut self, task_lists: &mut Vec<TaskList>) {
-        if task_lists.is_empty() || task_lists[self.selected].tasks.is_empty() { return; }
+        if task_lists.is_empty() || task_lists[self.selected].tasks.is_empty() {
+            return;
+        }
 
         let selected_list = &mut task_lists[self.selected];
         selected_list.tasks.remove(selected_list.selected);
@@ -264,10 +290,13 @@ impl TaskListTab {
     }
 
     fn edit_task(&mut self, task_lists: &mut Vec<TaskList>) {
-        if task_lists.is_empty() || task_lists[self.selected].tasks.is_empty() { return; }
+        if task_lists.is_empty() || task_lists[self.selected].tasks.is_empty() {
+            return;
+        }
 
         let selected_list = &task_lists[self.selected];
-        self.new_task_window.edit_task(selected_list.tasks[selected_list.selected].clone());
+        self.new_task_window
+            .edit_task(selected_list.tasks[selected_list.selected].clone());
     }
 
     fn new_task(&mut self) {
@@ -275,35 +304,49 @@ impl TaskListTab {
     }
 
     fn next_tab(&mut self, task_lists: &mut Vec<TaskList>) {
-        if task_lists.is_empty() { return; }
+        if task_lists.is_empty() {
+            return;
+        }
         self.selected = (self.selected + 1) % task_lists.len();
     }
 
     fn previous_tab(&mut self, task_lists: &mut Vec<TaskList>) {
-        if task_lists.is_empty() { return; }
+        if task_lists.is_empty() {
+            return;
+        }
         self.selected = (self.selected + task_lists.len() - 1) % task_lists.len();
     }
 
     pub fn render(&self, area: Rect, buf: &mut Buffer, task_lists: &Vec<TaskList>) {
-        let vertical = Layout::vertical([
-            Constraint::Length(1),
-            Constraint::Min(0),
-        ]);
+        let vertical = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
         let [task_bar, tasks_area] = vertical.areas(area);
 
         // Task Bar Rendering
         let mut spans: Vec<Span> = Vec::with_capacity(task_lists.len() + 1);
-        let mut highlight_pos: Rect = Rect {x: tasks_area.x + 11, y: tasks_area.y, width: 0, height: 1}; // 11 is length of "Task Lists:"
+        let mut highlight_pos: Rect = Rect {
+            x: tasks_area.x + 11,
+            y: tasks_area.y,
+            width: 0,
+            height: 1,
+        }; // 11 is length of "Task Lists:"
         spans.push(Span::from("Task Lists:"));
 
         for (i, list) in task_lists.iter().enumerate() {
             if highlight_pos.width == 0 {
-                if i == self.selected { highlight_pos.width = list.name.len() as u16 + 2; }
-                else  {highlight_pos.x += list.name.len() as u16 + 2; }
+                if i == self.selected {
+                    highlight_pos.width = list.name.len() as u16 + 2;
+                } else {
+                    highlight_pos.x += list.name.len() as u16 + 2;
+                }
             }
 
-            spans.push(Span::from(format!(" {} ", list.name))
-                .style(if i == self.selected {THEME.root_tab_selected} else {THEME.root}));
+            spans.push(
+                Span::from(format!(" {} ", list.name)).style(if i == self.selected {
+                    THEME.root_tab_selected
+                } else {
+                    THEME.root
+                }),
+            );
         }
         Line::from(spans).style(THEME.root).render(task_bar, buf);
 
@@ -335,48 +378,82 @@ impl TaskListTab {
 
         let selected_list = &task_lists[self.selected];
         for (index, task) in selected_list.tasks.iter().enumerate() {
-            if !area.intersects(tasks_inner_area) { break; }
+            if !area.intersects(tasks_inner_area) {
+                break;
+            }
 
-            let [mark_area, desc_area, date_area, duration_area] = horizontal.areas(tasks_inner_area);
+            let [mark_area, desc_area, date_area, duration_area] =
+                horizontal.areas(tasks_inner_area);
             Span::styled(
                 format!("[{}] ", task.status.get_symbol()),
-                if index == selected_list.selected {THEME.task_selected} else {THEME.task}
-            ).render(mark_area, buf);
+                if index == selected_list.selected {
+                    THEME.task_selected
+                } else {
+                    THEME.task
+                },
+            )
+            .render(mark_area, buf);
             Span::styled(
                 format!(" {} ", task.name),
-                if index == selected_list.selected && self.selected_sub_task == 0 {THEME.task_selected} else {THEME.task}
-            ).render(desc_area, buf);
+                if index == selected_list.selected && self.selected_sub_task == 0 {
+                    THEME.task_selected
+                } else {
+                    THEME.task
+                },
+            )
+            .render(desc_area, buf);
             Span::from(format!(" {} ", disp_md(task.date))).render(date_area, buf);
             Span::from(format!(" {} ", task.duration)).render(duration_area, buf);
 
-            tasks_inner_area = tasks_inner_area.offset(Offset {x: 0, y: 1});
+            tasks_inner_area = tasks_inner_area.offset(Offset { x: 0, y: 1 });
 
             if task.expanded {
                 for (sub_index, sub_task) in task.sub_tasks.iter().enumerate() {
-                    let [mark_area, desc_area, date_area, duration_area] = horizontal.areas(tasks_inner_area);
+                    let [mark_area, desc_area, date_area, duration_area] =
+                        horizontal.areas(tasks_inner_area);
                     Line::from(vec![
-                        Span::from(if sub_index == task.sub_tasks.len() - 1 {" └─"} else {" ├─"})
-                            .style(if index == selected_list.selected && self.selected_sub_task == sub_index + 1 {
-                                THEME.task_selected
-                            } else {
-                                THEME.task
-                            }),
-                        Span::from(if sub_index == task.sub_tasks.len() - 1 {"─"} else {"─"})
-                            .style(if index == selected_list.selected && sub_index + 1 == self.selected_sub_task {
-                                THEME.task_selected
-                            } else {
-                                THEME.task
-                            }),
-                        ])
-                        .render(mark_area, buf);
-                    Span::from(format!(" {} ", sub_task.name))
-                        .style(if index == selected_list.selected && sub_index + 1 == self.selected_sub_task {
-                            THEME.task_selected
+                        Span::from(if sub_index == task.sub_tasks.len() - 1 {
+                            " └─"
                         } else {
-                            THEME.task
+                            " ├─"
                         })
+                        .style(
+                            if index == selected_list.selected
+                                && self.selected_sub_task == sub_index + 1
+                            {
+                                THEME.task_selected
+                            } else {
+                                THEME.task
+                            },
+                        ),
+                        Span::from(if sub_index == task.sub_tasks.len() - 1 {
+                            "─"
+                        } else {
+                            "─"
+                        })
+                        .style(
+                            if index == selected_list.selected
+                                && sub_index + 1 == self.selected_sub_task
+                            {
+                                THEME.task_selected
+                            } else {
+                                THEME.task
+                            },
+                        ),
+                    ])
+                    .render(mark_area, buf);
+                    Span::from(format!(" {} ", sub_task.name))
+                        .style(
+                            if index == selected_list.selected
+                                && sub_index + 1 == self.selected_sub_task
+                            {
+                                THEME.task_selected
+                            } else {
+                                THEME.task
+                            },
+                        )
                         .render(desc_area, buf);
-                    tasks_inner_area = tasks_inner_area.offset(Offset {x: 0, y: 1});
+                    tasks_inner_area = tasks_inner_area.offset(Offset { x: 0, y: 1 });
                 }
             }
         }
@@ -399,10 +476,7 @@ impl CalendarTab {
     }
 
     pub fn render(&self, area: Rect, buf: &mut Buffer) {
-        let horizontal = Layout::horizontal([
-            Constraint::Length(24),
-            Constraint::Min(50),
-        ]);
+        let horizontal = Layout::horizontal([Constraint::Length(24), Constraint::Min(50)]);
         let [cal, weekly] = horizontal.areas(area);
 
         let cal_block = Block::bordered()
@@ -410,10 +484,9 @@ impl CalendarTab {
             .title_style(THEME.task_title)
             .border_type(BorderType::Rounded)
             .title("Monthly View");
-        self.cal.render(cal_block.inner(cal).offset(Offset {x: 1, y: 0}), buf);
+        self.cal
+            .render(cal_block.inner(cal).offset(Offset { x: 1, y: 0 }), buf);
         cal_block.render(cal, buf);
-
-
 
         Block::bordered()
             .title("Weekly View")
@@ -430,9 +503,7 @@ pub struct Options {
     pub refresh_rate: u32,
 }
 
-pub struct OptionsTab {
-
-}
+pub struct OptionsTab {}
 
 impl OptionsTab {
     pub fn handle_input(&mut self, key: KeyCode) -> bool {
@@ -443,20 +514,23 @@ impl OptionsTab {
         let border = Block::bordered()
             .border_type(BorderType::Rounded)
             .style(THEME.task_border);
-        Paragraph::new(
-            Text::from(vec![
-                Line::from(format!(
-                    "Delete task on completion: {}",
-                    if options.delete_on_completion {'Y'} else {'N'}
-                )),
-                Line::from(format!(
-                    "Error message display time: {} sec", options.error_display_time
-                ))
-            ])
-        )
-            .style(THEME.task)
-            .block(border)
-            .render(area, buf);
+        Paragraph::new(Text::from(vec![
+            Line::from(format!(
+                "Delete task on completion: {}",
+                if options.delete_on_completion {
+                    'Y'
+                } else {
+                    'N'
+                }
+            )),
+            Line::from(format!(
+                "Error message display time: {} sec",
+                options.error_display_time
+            )),
+        ]))
+        .style(THEME.task)
+        .block(border)
+        .render(area, buf);
     }
 }
 
@@ -465,9 +539,7 @@ pub struct UserProfile {
     pub name: String,
 }
 
-pub struct ProfileTab {
-
-}
+pub struct ProfileTab {}
 
 impl ProfileTab {
     pub fn handle_input(&mut self, key: KeyCode) -> bool {

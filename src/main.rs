@@ -1,42 +1,29 @@
 #![allow(unused_variables, dead_code, unused_imports)]
 
+use crate::{popup::*, tabs::*, theme::THEME, widgets::TextEntry};
+use chrono::NaiveDate;
+use crossterm::event::{self, KeyCode};
+use ratatui::{
+    layout::{Flex, Offset},
+    prelude::*,
+    widgets::{Block, Paragraph, Widget},
+};
 use std::{
     io::{self},
-    time::SystemTime,
     mem,
-};
-use crossterm::{
-    event::{self, KeyCode},
-};
-use ratatui::{
-    prelude::*,
-    widgets::{
-        Block, Paragraph, Widget,
-    },
-    layout::{
-        Flex,
-        Offset,
-    },
-};
-use chrono::{NaiveDate};
-use crate::{
-    tabs::*,
-    theme::{THEME},
-    popup::*,
-    widgets::TextEntry,
+    time::SystemTime,
 };
 
-mod tui;
-mod theme;
-mod tabs;
 mod popup;
+mod tabs;
+mod theme;
+mod tui;
 mod widgets;
 
 pub enum CommandRequest {
     None,
     SetActive,
 }
-
 
 #[derive(Clone, Copy, PartialEq)]
 enum RunningMode {
@@ -95,18 +82,26 @@ impl Widget for &App {
             Tab::Profile => self.profile_tab.render(canvas, buf, &self.profile),
         }
         if self.mode == RunningMode::Command {
-            Line::from(vec![Span::from(":"), Span::from(self.command_field.get_str())]).render(bottom_bar, buf);
-            Span::from("█")
-                .render(
-                    bottom_bar.offset(Offset {x: 1 + self.command_field.get_cursor_pos() as i32, y:0}),
-                    buf);
+            Line::from(vec![
+                Span::from(":"),
+                Span::from(self.command_field.get_str()),
+            ])
+            .render(bottom_bar, buf);
+            Span::from("█").render(
+                bottom_bar.offset(Offset {
+                    x: 1 + self.command_field.get_cursor_pos() as i32,
+                    y: 0,
+                }),
+                buf,
+            );
         } else if let Some(_) = self.frames_since_error {
-            Span::from(format!("Error: {}", self.error_str)).style(THEME.command_error).render(bottom_bar, buf);
+            Span::from(format!("Error: {}", self.error_str))
+                .style(THEME.command_error)
+                .render(bottom_bar, buf);
         } else {
             self.render_bottom_bar(bottom_bar, buf);
         }
     }
-
 }
 
 impl App {
@@ -145,7 +140,7 @@ impl App {
                                 self.frames_since_error = None;
                                 self.command_field.clear();
                             }
-                            _ => {},
+                            _ => {}
                         }
                     }
                 }
@@ -170,7 +165,7 @@ impl App {
                 }
                 KeyCode::Left => self.command_field.move_cursor_left(),
                 KeyCode::Right => self.command_field.move_cursor_right(),
-                _ => {},
+                _ => {}
             }
             true
         } else {
@@ -186,10 +181,14 @@ impl App {
     fn process_command(&mut self) {
         let mut parsed_command = self.command_field.get_str().split(' ');
         match parsed_command.next().unwrap() {
-            "tasks" | "t" => match self.task_list_tab.process_command(parsed_command, &mut self.task_lists) {
+            "tasks" | "t" => match self
+                .task_list_tab
+                .process_command(parsed_command, &mut self.task_lists)
+            {
                 Err(TaskCommandError::UnknownCommand) => {
                     self.frames_since_error = Some(0);
-                    self.error_str = format!("Unknown Command: \"{}\"", self.command_field.get_str());
+                    self.error_str =
+                        format!("Unknown Command: \"{}\"", self.command_field.get_str());
                 }
                 Err(TaskCommandError::InvalidFilePath) => {
                     self.frames_since_error = Some(0);
@@ -199,10 +198,10 @@ impl App {
                     self.frames_since_error = Some(0);
                     self.error_str = "Invalid File Format".to_string();
                 }
-                Ok(CommandRequest::None) => {},
+                Ok(CommandRequest::None) => {}
                 Ok(CommandRequest::SetActive) => self.current_tab = Tab::TaskList,
-            }
-            "calendar" | "c"=> self.current_tab = Tab::Calendar,
+            },
+            "calendar" | "c" => self.current_tab = Tab::Calendar,
             "options" | "o" => self.current_tab = Tab::Options,
             "profile" | "p" => self.current_tab = Tab::Profile,
             "quit" | "q" => self.quit(),
@@ -247,10 +246,34 @@ impl App {
 
         Block::new().style(THEME.root).render(area, buf);
         Paragraph::new("CL-TODO").render(app_name, buf);
-        Paragraph::new(" Tasks ").style(if let Tab::TaskList = self.current_tab {THEME.root_tab_selected} else {THEME.root}).render(list_tab, buf);
-        Paragraph::new(" Calendar ").style(if let Tab::Calendar = self.current_tab {THEME.root_tab_selected} else {THEME.root}).render(calendar_tab, buf);
-        Paragraph::new(" Options ").style(if let Tab::Options = self.current_tab {THEME.root_tab_selected} else {THEME.root}).render(options_tab, buf);
-        Paragraph::new(" Profile ").style(if let Tab::Profile = self.current_tab {THEME.root_tab_selected} else {THEME.root}).render(profile_tab, buf);
+        Paragraph::new(" Tasks ")
+            .style(if let Tab::TaskList = self.current_tab {
+                THEME.root_tab_selected
+            } else {
+                THEME.root
+            })
+            .render(list_tab, buf);
+        Paragraph::new(" Calendar ")
+            .style(if let Tab::Calendar = self.current_tab {
+                THEME.root_tab_selected
+            } else {
+                THEME.root
+            })
+            .render(calendar_tab, buf);
+        Paragraph::new(" Options ")
+            .style(if let Tab::Options = self.current_tab {
+                THEME.root_tab_selected
+            } else {
+                THEME.root
+            })
+            .render(options_tab, buf);
+        Paragraph::new(" Profile ")
+            .style(if let Tab::Profile = self.current_tab {
+                THEME.root_tab_selected
+            } else {
+                THEME.root
+            })
+            .render(profile_tab, buf);
     }
 
     /*
@@ -258,10 +281,7 @@ impl App {
         so render common followed by specific controls.
     */
     fn render_bottom_bar(&self, area: Rect, buf: &mut Buffer) {
-        let common_keys: [(&'static str, &'static str); 2] = [
-            ("Q", "Quit"),
-            ("n", "Next Tab"),
-        ];
+        let common_keys: [(&'static str, &'static str); 2] = [("Q", "Quit"), ("n", "Next Tab")];
 
         let other_keys_iter = match self.current_tab {
             Tab::TaskList => self.task_list_tab.controls.iter(),
@@ -291,18 +311,91 @@ fn main() -> io::Result<()> {
         error_str: String::new(),
         frames_since_error: None,
         task_lists: vec![
-            TaskList::new("test1".to_string(), Some(vec![
-                Task {name: "dynamic keybinds bar".to_string(), status: TaskStatus::InProgress, duration: Duration::default(), date: NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(), sub_tasks: vec![
-                    Task {name: "reduce rendering time (might use memoization from layout)".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: NaiveDate::default(), sub_tasks: Vec::new(), expanded: false},
-                    Task {name: "reduce rendering time (might use memoization from layout)".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: NaiveDate::default(), sub_tasks: Vec::new(), expanded: false},
-                    Task {name: "reduce rendering time (might use memoization from layout)".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: NaiveDate::default(), sub_tasks: Vec::new(), expanded: false},
-                    Task {name: "reduce rendering time (might use memoization from layout)".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: NaiveDate::default(), sub_tasks: Vec::new(), expanded: false},
-                    Task {name: "reduce rendering time (might use memoization from layout)".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: NaiveDate::default(), sub_tasks: Vec::new(), expanded: false},
-                    Task {name: "reduce rendering time (might use memoization from layout)".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: NaiveDate::default(), sub_tasks: Vec::new(), expanded: false},
-                    Task {name: "reduce rendering time (might use memoization from layout)".to_string(), status: TaskStatus::NotStarted, duration: Duration::default(), date: NaiveDate::default(), sub_tasks: Vec::new(), expanded: false},
-                ], expanded: true},
-                Task {name: "add background to popup".to_string(), status: TaskStatus::Finished, duration: Duration::default(), date: NaiveDate::from_ymd_opt(2024, 7, 8).unwrap(), sub_tasks: Vec::new(), expanded: false},
-                ])),
+            TaskList::new(
+                "test1".to_string(),
+                Some(vec![
+                    Task {
+                        name: "dynamic keybinds bar".to_string(),
+                        status: TaskStatus::InProgress,
+                        duration: Duration::default(),
+                        date: NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+                        sub_tasks: vec![
+                            Task {
+                                name: "reduce rendering time (might use memoization from layout)"
+                                    .to_string(),
+                                status: TaskStatus::NotStarted,
+                                duration: Duration::default(),
+                                date: NaiveDate::default(),
+                                sub_tasks: Vec::new(),
+                                expanded: false,
+                            },
+                            Task {
+                                name: "reduce rendering time (might use memoization from layout)"
+                                    .to_string(),
+                                status: TaskStatus::NotStarted,
+                                duration: Duration::default(),
+                                date: NaiveDate::default(),
+                                sub_tasks: Vec::new(),
+                                expanded: false,
+                            },
+                            Task {
+                                name: "reduce rendering time (might use memoization from layout)"
+                                    .to_string(),
+                                status: TaskStatus::NotStarted,
+                                duration: Duration::default(),
+                                date: NaiveDate::default(),
+                                sub_tasks: Vec::new(),
+                                expanded: false,
+                            },
+                            Task {
+                                name: "reduce rendering time (might use memoization from layout)"
+                                    .to_string(),
+                                status: TaskStatus::NotStarted,
+                                duration: Duration::default(),
+                                date: NaiveDate::default(),
+                                sub_tasks: Vec::new(),
+                                expanded: false,
+                            },
+                            Task {
+                                name: "reduce rendering time (might use memoization from layout)"
+                                    .to_string(),
+                                status: TaskStatus::NotStarted,
+                                duration: Duration::default(),
+                                date: NaiveDate::default(),
+                                sub_tasks: Vec::new(),
+                                expanded: false,
+                            },
+                            Task {
+                                name: "reduce rendering time (might use memoization from layout)"
+                                    .to_string(),
+                                status: TaskStatus::NotStarted,
+                                duration: Duration::default(),
+                                date: NaiveDate::default(),
+                                sub_tasks: Vec::new(),
+                                expanded: false,
+                            },
+                            Task {
+                                name: "reduce rendering time (might use memoization from layout)"
+                                    .to_string(),
+                                status: TaskStatus::NotStarted,
+                                duration: Duration::default(),
+                                date: NaiveDate::default(),
+                                sub_tasks: Vec::new(),
+                                expanded: false,
+                            },
+                        ],
+                        expanded: true,
+                    },
+                    Task {
+                        name: "add background to popup".to_string(),
+                        status: TaskStatus::Finished,
+                        duration: Duration::default(),
+                        date: NaiveDate::from_ymd_opt(2024, 7, 8).unwrap(),
+                        sub_tasks: Vec::new(),
+                        expanded: false,
+                    },
+                ]),
+            ),
             TaskList::new("test1".to_string(), None),
         ],
         profile: UserProfile {
@@ -327,7 +420,7 @@ fn main() -> io::Result<()> {
         },
         calendar_tab: CalendarTab::default(),
         options_tab: OptionsTab {},
-        profile_tab: ProfileTab {}
+        profile_tab: ProfileTab {},
     };
     app.run(&mut terminal)?;
     tui::restore()

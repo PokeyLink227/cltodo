@@ -1,13 +1,7 @@
 use chrono::{Datelike, Weekday};
-use ratatui::{
-    prelude::*,
-    widgets::*,
-    layout::Offset,
-};
+use ratatui::{layout::Offset, prelude::*, widgets::*};
 //use crossterm::event::{KeyCode};
-use crate::{
-    theme::{THEME},
-};
+use crate::theme::THEME;
 use itertools::Itertools;
 
 #[derive(Default)]
@@ -79,37 +73,34 @@ impl TextEntry {
     }
 
     pub fn remove(&mut self) {
-        if self.text.len() == 0 { return; }
+        if self.text.len() == 0 {
+            return;
+        }
         // stops backspace from acting like del when at the beginning of the string
-        if self.cursor_pos == 0 { return; }
+        if self.cursor_pos == 0 {
+            return;
+        }
 
         self.move_cursor_left();
         self.text.remove(self.byte_index());
     }
-
 }
 
 #[derive(Default)]
-pub struct Calendar {
-
-}
+pub struct Calendar {}
 
 impl Calendar {
-
     pub fn render(&self, area: Rect, buf: &mut Buffer) {
         let days = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
         let start = 1;
 
-        Line::from(days
-            .iter()
-            .map(|day| {
-                Span::from(format!("{} ", day))
-            })
-            .collect::<Vec<Span>>()
+        Line::from(
+            days.iter()
+                .map(|day| Span::from(format!("{} ", day)))
+                .collect::<Vec<Span>>(),
         )
-            .render(area, buf);
-
+        .render(area, buf);
 
         let date = chrono::offset::Local::now().date_naive();
         let first = date.with_day(1).unwrap();
@@ -118,30 +109,28 @@ impl Calendar {
             .iter_weeks()
             .take(6)
             .map(|week| {
-                Line::from(week
-                    .iter_days()
-                    .take(7)
-                    .map(|day| {
-                        Span::styled(
-                            format!("{:2} ", day.day()),
-                            if day.month() == date.month() {
-                                if day == date {
-                                    THEME.calendar.today
+                Line::from(
+                    week.iter_days()
+                        .take(7)
+                        .map(|day| {
+                            Span::styled(
+                                format!("{:2} ", day.day()),
+                                if day.month() == date.month() {
+                                    if day == date {
+                                        THEME.calendar.today
+                                    } else {
+                                        THEME.calendar.this_month
+                                    }
                                 } else {
-                                    THEME.calendar.this_month
-                                }
-                            } else {
-                                THEME.calendar.other_month
-                            }
-                        )
-                    })
-                    .collect::<Vec<Span>>()
+                                    THEME.calendar.other_month
+                                },
+                            )
+                        })
+                        .collect::<Vec<Span>>(),
                 )
             })
             .collect();
 
-        Text::from(lines)
-            .render(area.offset(Offset {x: 0, y: 1}), buf);
-
+        Text::from(lines).render(area.offset(Offset { x: 0, y: 1 }), buf);
     }
 }

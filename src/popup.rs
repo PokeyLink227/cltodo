@@ -1,29 +1,17 @@
+use crate::{
+    tabs::{disp_md, Task, TaskStatus},
+    theme::THEME,
+    widgets::TextEntry,
+};
+use chrono::{Datelike, Days, NaiveDate};
+use crossterm::event::KeyCode;
 use ratatui::{
+    layout::{Flex, Offset},
     prelude::*,
     widgets::{
-        Clear,
-        BorderType,
-        Block,
-        block::{
-            Title,
-            Position,
-        },
+        block::{Position, Title},
+        Block, BorderType, Clear,
     },
-    layout::{
-        Offset,
-        Flex,
-    },
-};
-use crossterm::event::{KeyCode};
-use chrono::{
-    NaiveDate,
-    Datelike,
-    Days,
-};
-use crate::{
-    theme::{THEME},
-    tabs::{Task, TaskStatus, disp_md},
-    widgets::TextEntry,
 };
 
 #[derive(Default, PartialEq)]
@@ -125,16 +113,15 @@ impl TaskEditorPopup {
             TaskEditorField::Date => match key {
                 KeyCode::Char('j') => self.task.date = self.task.date.succ_opt().unwrap(),
                 KeyCode::Char('k') => self.task.date = self.task.date.pred_opt().unwrap(),
-                KeyCode::Tab
-                | KeyCode::Char('/') if self.editing_date => {
+                KeyCode::Tab | KeyCode::Char('/') if self.editing_date => {
                     self.submit_date();
                 }
-                KeyCode::Backspace => if self.editing_date {
-                    self.date_field.remove();
+                KeyCode::Backspace => {
+                    if self.editing_date {
+                        self.date_field.remove();
+                    }
                 }
-                KeyCode::Char(c)
-                    if c >= '0' && c <= '9' || c == '+' || c == '-' =>
-                {
+                KeyCode::Char(c) if c >= '0' && c <= '9' || c == '+' || c == '-' => {
                     self.editing_date = true;
                     self.date_field.insert(c);
                 }
@@ -193,7 +180,7 @@ impl TaskEditorPopup {
             THEME.popup
         }
     }
-    
+
     // consumes date entry string and updates date if pattern is valid
     fn submit_date(&mut self) {
         match self.parse_date() {
@@ -206,39 +193,31 @@ impl TaskEditorPopup {
 
     fn parse_date(&mut self) -> Option<NaiveDate> {
         let today = chrono::offset::Local::now().date_naive();
-        
+
         // +d adds d days to todays date
         if self.date_field.get_str().chars().nth(0)? == '+' {
-            today.checked_add_days(Days::new(self
-                                             .date_field
-                                             .get_str()
-                                             .get(1..)?
-                                             .parse::<u64>()
-                                             .ok()?
-                                             ))
+            today.checked_add_days(Days::new(
+                self.date_field.get_str().get(1..)?.parse::<u64>().ok()?,
+            ))
         // -d adds d days to todays date
         } else if self.date_field.get_str().chars().nth(0)? == '-' {
-            today.checked_sub_days(Days::new(self
-                                             .date_field
-                                             .get_str()
-                                             .get(1..)?
-                                             .parse::<u64>()
-                                             .ok()?
-                                             ))
+            today.checked_sub_days(Days::new(
+                self.date_field.get_str().get(1..)?.parse::<u64>().ok()?,
+            ))
         // mmdd sets date to (current_year, mm, dd)
         } else if self.date_field.get_str().len() == 4 {
             NaiveDate::from_ymd_opt(
                 today.year(),
                 self.date_field.get_str().get(0..2)?.parse::<u32>().ok()?,
-                self.date_field.get_str().get(2..4)?.parse::<u32>().ok()?
-                )
+                self.date_field.get_str().get(2..4)?.parse::<u32>().ok()?,
+            )
         // yyyymmdd sets date to (yyyy, mm, dd)
         } else if self.date_field.get_str().len() == 8 {
             NaiveDate::from_ymd_opt(
                 self.date_field.get_str().get(0..4)?.parse::<i32>().ok()?,
                 self.date_field.get_str().get(4..6)?.parse::<u32>().ok()?,
-                self.date_field.get_str().get(6..8)?.parse::<u32>().ok()?
-                )
+                self.date_field.get_str().get(6..8)?.parse::<u32>().ok()?,
+            )
         } else {
             None
         }
@@ -252,16 +231,20 @@ impl Widget for &TaskEditorPopup {
         let [area] = vertical.areas(area);
         let [area] = horizontal.areas(area);
 
-
         let window = Block::bordered()
             .style(THEME.popup)
             .border_style(THEME.popup)
             .border_type(BorderType::Rounded)
-            .title(Line::from(if let TaskSource::New = self.task_source {"New Task"} else {"Edit Task"}))
+            .title(Line::from(if let TaskSource::New = self.task_source {
+                "New Task"
+            } else {
+                "Edit Task"
+            }))
             .title(
                 Title::from(format!(" [Esc] to Cancel [Enter] to Confirm "))
                     .alignment(Alignment::Right)
-                    .position(Position::Bottom));
+                    .position(Position::Bottom),
+            );
 
         let win_area = window.inner(area);
         Clear.render(win_area, buf);
@@ -292,51 +275,55 @@ impl Widget for &TaskEditorPopup {
         let [status_area, date_area, duration_area] = mid_horiz.areas(mid_area);
         Span::styled(
             format!("Status: {}", self.task.status.get_symbol()),
-            self.get_style(TaskEditorField::Status)
+            self.get_style(TaskEditorField::Status),
         )
-            .render(status_area, buf);
+        .render(status_area, buf);
         Span::styled(
-            format!("Date: {}", if self.editing_date {
-                self.date_field.get_str().to_owned()
-            } else {
-                disp_md(self.task.date)
-            }),
-            self.get_style(TaskEditorField::Date)
+            format!(
+                "Date: {}",
+                if self.editing_date {
+                    self.date_field.get_str().to_owned()
+                } else {
+                    disp_md(self.task.date)
+                }
+            ),
+            self.get_style(TaskEditorField::Date),
         )
-            .render(date_area, buf);
+        .render(date_area, buf);
         if self.selected_field == TaskEditorField::Date && self.editing_date {
-            Span::from("█")
-                .style(THEME.popup_selected)
-                .render(
-                    date_area.offset(Offset {x: 6 + self.date_field.get_cursor_pos() as i32, y:0}),
-                    buf);
+            Span::from("█").style(THEME.popup_selected).render(
+                date_area.offset(Offset {
+                    x: 6 + self.date_field.get_cursor_pos() as i32,
+                    y: 0,
+                }),
+                buf,
+            );
         }
 
         Span::styled(
             format!("Dur: {}", self.task.duration),
-            self.get_style(TaskEditorField::Duration)
+            self.get_style(TaskEditorField::Duration),
         )
-            .render(duration_area, buf);
+        .render(duration_area, buf);
 
         //let text_entry = Paragraph::new(self.text.as_str()).wrap(Wrap {trim: true});
-        let top_horiz = Layout::horizontal([
-            Constraint::Min(0),
-        ]);
+        let top_horiz = Layout::horizontal([Constraint::Min(0)]);
         let [text_area] = top_horiz.areas(top_area);
         Line::from(vec![
             Span::from("Desc: "),
             Span::from(self.desc_field.get_str()),
         ])
-            .style(self.get_style(TaskEditorField::Description))
-            .render(text_area, buf);
+        .style(self.get_style(TaskEditorField::Description))
+        .render(text_area, buf);
 
         if self.selected_field == TaskEditorField::Description {
-            Span::from("█")
-                .style(THEME.popup_selected)
-                .render(
-                    text_area.offset(Offset {x: 6 + self.desc_field.get_cursor_pos() as i32, y:0}),
-                    buf);
+            Span::from("█").style(THEME.popup_selected).render(
+                text_area.offset(Offset {
+                    x: 6 + self.desc_field.get_cursor_pos() as i32,
+                    y: 0,
+                }),
+                buf,
+            );
         }
     }
-
 }
