@@ -152,8 +152,14 @@ impl TaskListTab {
                 match self.new_task_window.task_source {
                     TaskSource::New => selected_list.tasks.push(self.new_task_window.take_task()),
                     TaskSource::Existing => {
-                        selected_list.tasks[selected_list.selected] =
-                            self.new_task_window.take_task()
+                        let task = &mut selected_list.tasks[selected_list.selected];
+                        if task.sub_tasks.len() > 0 && task.expanded && self.selected_sub_task != 0
+                        {
+                            task.sub_tasks[self.selected_sub_task - 1] =
+                                self.new_task_window.take_task();
+                        } else {
+                            *task = self.new_task_window.take_task();
+                        }
                     }
                 }
                 self.new_task_window.status = PopupStatus::Closed;
@@ -276,7 +282,9 @@ impl TaskListTab {
         let list = &mut task_lists[self.selected];
         let task = &mut list.tasks[list.selected];
         if task.sub_tasks.len() > 0 && task.expanded && self.selected_sub_task != 0 {
-            task.sub_tasks[self.selected_sub_task - 1].status.cycle_next();
+            task.sub_tasks[self.selected_sub_task - 1]
+                .status
+                .cycle_next();
         } else {
             task.status.cycle_next();
         }
@@ -300,8 +308,14 @@ impl TaskListTab {
         }
 
         let selected_list = &task_lists[self.selected];
-        self.new_task_window
-            .edit_task(selected_list.tasks[selected_list.selected].clone());
+        let task = &selected_list.tasks[selected_list.selected];
+
+        if task.sub_tasks.len() > 0 && task.expanded && self.selected_sub_task != 0 {
+            self.new_task_window
+                .edit_task(task.sub_tasks[self.selected_sub_task - 1].clone());
+        } else {
+            self.new_task_window.edit_task(task.clone());
+        }
     }
 
     fn new_task(&mut self) {
@@ -446,11 +460,8 @@ impl TaskListTab {
                         .style(style),
                     ])
                     .render(tree_area, buf);
-                    Span::styled(
-                        format!("[{}]", sub_task.status.get_symbol()),
-                        style,
-                    )
-                    .render(mark_area, buf);
+                    Span::styled(format!("[{}]", sub_task.status.get_symbol()), style)
+                        .render(mark_area, buf);
                     Span::from(format!(" {} ", sub_task.name))
                         .style(style)
                         .render(desc_area, buf);
