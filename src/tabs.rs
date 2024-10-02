@@ -169,27 +169,34 @@ impl TaskListTab {
                 KeyCode::Char('h') => self.previous_tab(task_lists),
                 KeyCode::Char('l') => self.next_tab(task_lists),
                 KeyCode::Char('k') => {
-                    if self.selected_sub_task == 0 {
-                        selected_list.previous_task();
-                        if !selected_list.tasks.is_empty()
-                            && selected_list.tasks[selected_list.selected].expanded
-                        {
-                            self.selected_sub_task =
-                                selected_list.tasks[selected_list.selected].sub_tasks.len();
+                    if selected_list.tasks[selected_list.selected].expanded {
+                        if self.selected_sub_task == 0 {
+                            selected_list.previous_task();
+                            if selected_list.tasks[selected_list.selected].expanded {
+                                self.selected_sub_task = selected_list.tasks[selected_list.selected].sub_tasks.len();
+                            }
+                        } else {
+                            self.selected_sub_task -= 1;
                         }
                     } else {
-                        self.selected_sub_task -= 1;
+                        selected_list.previous_task();
+                        if selected_list.tasks[selected_list.selected].expanded {
+                            self.selected_sub_task = selected_list.tasks[selected_list.selected].sub_tasks.len();
+                        }
                     }
                 }
                 KeyCode::Char('j') => {
-                    if !selected_list.tasks.is_empty()
-                        && self.selected_sub_task
-                            >= selected_list.tasks[selected_list.selected].sub_tasks.len()
-                    {
-                        self.selected_sub_task = 0;
-                        selected_list.next_task();
-                    } else {
+                    if selected_list.tasks[selected_list.selected].expanded {
                         self.selected_sub_task += 1;
+                        if self.selected_sub_task
+                            > selected_list.tasks[selected_list.selected].sub_tasks.len()
+                        {
+                            self.selected_sub_task = 0;
+                            selected_list.next_task();
+                        }
+
+                    } else {
+                        selected_list.next_task();
                     }
                 }
                 KeyCode::Char('a') => self.new_task(),
@@ -197,8 +204,13 @@ impl TaskListTab {
                 KeyCode::Char('m') => self.mark_task(task_lists),
                 KeyCode::Char('d') => self.delete_task(task_lists),
                 KeyCode::Right => {
-                    selected_list.tasks[selected_list.selected].expanded =
-                        !selected_list.tasks[selected_list.selected].expanded
+                    let task = &mut selected_list.tasks[selected_list.selected];
+                    if task.expanded {
+                        task.expanded = false;
+                        self.selected_sub_task = 0;
+                    } else {
+                        task.expanded = true;
+                    }
                 }
                 //KeyCode::Char('s') => self.save_data(task_lists),
                 //KeyCode::Char('S') => self.load_data(task_lists),
