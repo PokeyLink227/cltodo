@@ -320,6 +320,10 @@ impl TaskListTab {
     }
 
     fn try_delete_task(&mut self, task_lists: &mut Vec<TaskList>) {
+        if task_lists.is_empty() || task_lists[self.selected].tasks.is_empty() {
+            return;
+        }
+
         self.delete_conf_window.show();
     }
 
@@ -329,9 +333,17 @@ impl TaskListTab {
         }
 
         let selected_list = &mut task_lists[self.selected];
-        selected_list.tasks.remove(selected_list.selected);
-        if selected_list.selected == selected_list.tasks.len() {
-            selected_list.previous_task();
+        let task = &mut selected_list.tasks[selected_list.selected];
+        if task.sub_tasks.len() > 0 && task.expanded && self.selected_sub_task != 0 {
+            task.sub_tasks.remove(self.selected_sub_task - 1);
+            if self.selected_sub_task > task.sub_tasks.len() {
+                self.selected_sub_task -= 1;
+            }
+        } else {
+            selected_list.tasks.remove(selected_list.selected);
+            if selected_list.selected == selected_list.tasks.len() {
+                selected_list.previous_task();
+            }
         }
     }
 
