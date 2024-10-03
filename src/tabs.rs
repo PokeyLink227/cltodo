@@ -1,5 +1,5 @@
 use crate::{
-    popup::{PopupStatus, TaskEditorPopup, TaskSource},
+    popup::{ConfirmationField, ConfirmationPopup, PopupStatus, TaskEditorPopup, TaskSource},
     theme::THEME,
     widgets::Calendar,
     CommandRequest,
@@ -136,6 +136,7 @@ pub struct TaskListTab {
     pub selected: usize,
 
     pub new_task_window: TaskEditorPopup,
+    pub delete_conf_window: ConfirmationPopup,
 
     pub selected_sub_task: usize,
 }
@@ -163,6 +164,21 @@ impl TaskListTab {
                     }
                 }
                 self.new_task_window.status = PopupStatus::Closed;
+            }
+        } else if self.delete_conf_window.status == PopupStatus::InUse {
+            input_captured = self.delete_conf_window.handle_input(key);
+
+            match self.delete_conf_window.status {
+                PopupStatus::InUse | PopupStatus::Closed => {}
+                PopupStatus::Confirmed => {
+                    if self.delete_conf_window.decision() {
+                        self.delete_task(task_lists);
+                    }
+                    self.delete_conf_window.close();
+                }
+                PopupStatus::Canceled => {
+                    self.delete_conf_window.close();
+                }
             }
         } else {
             match key {
@@ -203,7 +219,7 @@ impl TaskListTab {
                 KeyCode::Char('a') => self.new_task(),
                 KeyCode::Char('e') => self.edit_task(task_lists),
                 KeyCode::Char('m') => self.mark_task(task_lists),
-                KeyCode::Char('d') => self.delete_task(task_lists),
+                KeyCode::Char('d') => self.try_delete_task(task_lists),
                 KeyCode::Right => {
                     let task = &mut selected_list.tasks[selected_list.selected];
                     if task.expanded {
@@ -301,6 +317,10 @@ impl TaskListTab {
         } else {
             task.status.cycle_next();
         }
+    }
+
+    fn try_delete_task(&mut self, task_lists: &mut Vec<TaskList>) {
+        self.delete_conf_window.show();
     }
 
     fn delete_task(&mut self, task_lists: &mut Vec<TaskList>) {
@@ -484,8 +504,10 @@ impl TaskListTab {
         }
 
         // Popup Rendering
-        if let PopupStatus::InUse = self.new_task_window.status {
+        if PopupStatus::InUse == self.new_task_window.status {
             self.new_task_window.render(area, buf);
+        } else if self.delete_conf_window.status == PopupStatus::InUse {
+            self.delete_conf_window.render(area, buf);
         }
     }
 }

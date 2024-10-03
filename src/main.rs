@@ -427,6 +427,10 @@ fn main() -> io::Result<()> {
             ],
             selected: 0,
             new_task_window: TaskEditorPopup::default(),
+            delete_conf_window: ConfirmationPopup::new(
+                "Confirmation".to_string(),
+                "Are you sure you want to delete?".to_string(),
+            ),
             selected_sub_task: 0,
         },
         calendar_tab: CalendarTab::default(),
