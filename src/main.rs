@@ -284,7 +284,7 @@ impl App {
         let [app_name, list_tab, calendar_tab, options_tab, profile_tab] = horizontal.areas(area);
 
         Block::new().style(THEME.root).render(area, buf);
-        Paragraph::new("CL-TODO").render(app_name, buf);
+        Paragraph::new("FrogPad").render(app_name, buf);
         Paragraph::new(" Tasks ")
             .style(if let Tab::TaskList = self.current_tab {
                 THEME.root_tab_selected
@@ -349,94 +349,7 @@ fn main() -> io::Result<()> {
         command_field: TextEntry::default(),
         error_str: String::new(),
         frames_since_error: None,
-        task_lists: vec![
-            TaskList::new(
-                "test1".to_string(),
-                Some(vec![
-                    Task {
-                        name: "dynamic keybinds bar".to_string(),
-                        status: TaskStatus::InProgress,
-                        duration: Duration::default(),
-                        date: NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
-                        sub_tasks: vec![
-                            Task {
-                                name: "reduce rendering time (might use memoization from layout)"
-                                    .to_string(),
-                                status: TaskStatus::NotStarted,
-                                duration: Duration::default(),
-                                date: NaiveDate::default(),
-                                sub_tasks: Vec::new(),
-                                expanded: false,
-                            },
-                            Task {
-                                name: "reduce rendering time (might use memoization from layout)"
-                                    .to_string(),
-                                status: TaskStatus::NotStarted,
-                                duration: Duration::default(),
-                                date: NaiveDate::default(),
-                                sub_tasks: Vec::new(),
-                                expanded: false,
-                            },
-                            Task {
-                                name: "reduce rendering time (might use memoization from layout)"
-                                    .to_string(),
-                                status: TaskStatus::NotStarted,
-                                duration: Duration::default(),
-                                date: NaiveDate::default(),
-                                sub_tasks: Vec::new(),
-                                expanded: false,
-                            },
-                            Task {
-                                name: "reduce rendering time (might use memoization from layout)"
-                                    .to_string(),
-                                status: TaskStatus::NotStarted,
-                                duration: Duration::default(),
-                                date: NaiveDate::default(),
-                                sub_tasks: Vec::new(),
-                                expanded: false,
-                            },
-                            Task {
-                                name: "reduce rendering time (might use memoization from layout)"
-                                    .to_string(),
-                                status: TaskStatus::NotStarted,
-                                duration: Duration::default(),
-                                date: NaiveDate::default(),
-                                sub_tasks: Vec::new(),
-                                expanded: false,
-                            },
-                            Task {
-                                name: "reduce rendering time (might use memoization from layout)"
-                                    .to_string(),
-                                status: TaskStatus::NotStarted,
-                                duration: Duration::default(),
-                                date: NaiveDate::default(),
-                                sub_tasks: Vec::new(),
-                                expanded: false,
-                            },
-                            Task {
-                                name: "reduce rendering time (might use memoization from layout)"
-                                    .to_string(),
-                                status: TaskStatus::NotStarted,
-                                duration: Duration::default(),
-                                date: NaiveDate::default(),
-                                sub_tasks: Vec::new(),
-                                expanded: false,
-                            },
-                        ],
-                        expanded: true,
-                    },
-                    Task {
-                        name: "add background to popup".to_string(),
-                        status: TaskStatus::Finished,
-                        duration: Duration::default(),
-                        date: NaiveDate::from_ymd_opt(2024, 7, 8).unwrap(),
-                        sub_tasks: Vec::new(),
-                        expanded: false,
-                    },
-                ]),
-            ),
-            TaskList::new("test1".to_string(), None),
-        ],
+        task_lists: Vec::new(),
         profile: UserProfile {
             name: "Thomas".to_string(),
         },
