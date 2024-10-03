@@ -61,6 +61,7 @@ pub struct App {
     calendar_tab: CalendarTab,
     options_tab: OptionsTab,
     profile_tab: ProfileTab,
+    save_window: ConfirmationPopup,
 }
 
 impl Widget for &App {
@@ -81,6 +82,11 @@ impl Widget for &App {
             Tab::Options => self.options_tab.render(canvas, buf, &self.options),
             Tab::Profile => self.profile_tab.render(canvas, buf, &self.profile),
         }
+
+        if self.save_window.status == PopupStatus::InUse {
+            self.save_window.render(area, buf);
+        }
+
         if self.mode == RunningMode::Command {
             Line::from(vec![
                 Span::from(":"),
@@ -115,6 +121,7 @@ impl App {
             terminal.draw(|frame| self.render_frame(frame))?;
             self.handle_events()?;
 
+            // command error timer update
             if let Some(frames) = self.frames_since_error {
                 if frames >= self.options.error_display_time * self.options.refresh_rate {
                     self.frames_since_error = None;
@@ -122,11 +129,25 @@ impl App {
                     self.frames_since_error = Some(frames + 1);
                 }
             }
+
+            // popup handler
+            match self.save_window.status {
+                PopupStatus::Closed | PopupStatus::InUse => {}
+                PopupStatus::Canceled => {
+                    self.save_window.close();
+                }
+                PopupStatus::Confirmed => {
+                    self.save_window.close();
+                    self.mode = RunningMode::Exiting;
+                    if self.save_window.decision() {
+                        self.command_field.set_text("t save".to_string());
+                        self.process_command();
+                    }
+                }
+            }
         }
 
         // clean up
-        self.command_field.set_text("t save".to_string());
-        self.process_command();
 
         // report no errors
         Ok(())
@@ -143,7 +164,7 @@ impl App {
                 if key.kind == event::KeyEventKind::Press {
                     if !self.dispatch_input(key.code) {
                         match key.code {
-                            KeyCode::Char('q') => self.quit(),
+                            KeyCode::Char('q') => self.try_quit(),
                             KeyCode::Char('n') => self.next_tab(),
                             KeyCode::Char('N') => self.previous_tab(),
                             KeyCode::Char(':') => {
@@ -179,6 +200,8 @@ impl App {
                 _ => {}
             }
             true
+        } else if self.save_window.status == PopupStatus::InUse {
+            self.save_window.handle_input(key)
         } else {
             match self.current_tab {
                 Tab::TaskList => self.task_list_tab.handle_input(&mut self.task_lists, key),
@@ -215,7 +238,8 @@ impl App {
             "calendar" | "c" => self.current_tab = Tab::Calendar,
             "options" | "o" => self.current_tab = Tab::Options,
             "profile" | "p" => self.current_tab = Tab::Profile,
-            "quit" | "q" => self.quit(),
+            "quit" | "q" => self.try_quit(),
+            "quit!" | "q!" => self.force_quit(),
             _ => {
                 self.frames_since_error = Some(0);
                 self.error_str = format!("Unknown Command: {}", self.command_field.get_str());
@@ -223,8 +247,12 @@ impl App {
         }
     }
 
-    fn quit(&mut self) {
+    fn force_quit(&mut self) {
         self.mode = RunningMode::Exiting;
+    }
+
+    fn try_quit(&mut self) {
+        self.save_window.show();
     }
 
     fn next_tab(&mut self) {
@@ -428,7 +456,7 @@ fn main() -> io::Result<()> {
             selected: 0,
             new_task_window: TaskEditorPopup::default(),
             delete_conf_window: ConfirmationPopup::new(
-                "Confirmation".to_string(),
+                "Confirm delete".to_string(),
                 "Are you sure you want to delete?".to_string(),
             ),
             selected_sub_task: 0,
@@ -436,6 +464,10 @@ fn main() -> io::Result<()> {
         calendar_tab: CalendarTab::default(),
         options_tab: OptionsTab {},
         profile_tab: ProfileTab {},
+        save_window: ConfirmationPopup::new(
+            "Confirm Save".to_string(),
+            "There is unsaved work. Save now?".to_string(),
+        ),
     };
     app.run(&mut terminal)?;
     tui::restore()
