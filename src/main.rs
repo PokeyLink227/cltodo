@@ -212,6 +212,7 @@ impl App {
         }
     }
 
+    // currently doesnt support arguments with spaces included
     fn process_command(&mut self) {
         let mut parsed_command = self.command_field.get_str().split(' ');
         match parsed_command.next().unwrap() {
@@ -219,19 +220,18 @@ impl App {
                 .task_list_tab
                 .process_command(parsed_command, &mut self.task_lists)
             {
-                Err(TaskCommandError::UnknownCommand) => {
-                    self.frames_since_error = Some(0);
-                    self.error_str =
-                        format!("Unknown Command: \"{}\"", self.command_field.get_str());
-                }
+                Err(TaskCommandError::UnknownCommand) => self.post_error(format!(
+                    "Unknown Command: \"{}\"",
+                    self.command_field.get_str()
+                )),
                 Err(TaskCommandError::InvalidFilePath) => {
-                    self.frames_since_error = Some(0);
-                    self.error_str = "Invalid File Path".to_string();
+                    self.post_error("Invalid File Path".to_string())
                 }
                 Err(TaskCommandError::InvalidFileFormat) => {
-                    self.frames_since_error = Some(0);
-                    self.error_str = "Invalid File Format".to_string();
+                    self.post_error("Invalid File Format".to_string())
                 }
+                Err(TaskCommandError::MissingField) => self.post_error("Missing Field".to_string()),
+                Err(TaskCommandError::NotANumber) => self.post_error("Not A Number".to_string()),
                 Ok(CommandRequest::None) => {}
                 Ok(CommandRequest::SetActive) => self.current_tab = Tab::TaskList,
             },
@@ -240,11 +240,13 @@ impl App {
             "profile" | "p" => self.current_tab = Tab::Profile,
             "quit" | "q" => self.try_quit(),
             "quit!" | "q!" => self.force_quit(),
-            _ => {
-                self.frames_since_error = Some(0);
-                self.error_str = format!("Unknown Command: {}", self.command_field.get_str());
-            }
+            _ => self.post_error(format!("Unknown Command: {}", self.command_field.get_str())),
         }
+    }
+
+    fn post_error(&mut self, err_str: String) {
+        self.frames_since_error = Some(0);
+        self.error_str = err_str;
     }
 
     fn force_quit(&mut self) {

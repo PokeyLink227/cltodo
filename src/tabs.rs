@@ -53,10 +53,8 @@ pub enum TaskCommandError {
     UnknownCommand,
     InvalidFilePath,
     InvalidFileFormat,
-    /*
     NotANumber,
     MissingField,
-    */
 }
 
 #[derive(Default, Clone, Deserialize, Serialize)]
@@ -249,22 +247,26 @@ impl TaskListTab {
                 Ok(CommandRequest::None)
             }
             Some("save") => match command.next() {
-                None => self.save_data("list.json", task_lists),
                 Some(filename) => self.save_data(filename, task_lists),
+                None => self.save_data("list.json", task_lists),
             },
             Some("load") => match command.next() {
-                None => self.load_data("list.json", task_lists),
                 Some(filename) => self.load_data(filename, task_lists),
+                None => self.load_data("list.json", task_lists),
             },
-            /*
+            Some("import") => match command.next() {
+                Some(filename) => self.load_list(filename, task_lists),
+                None => Err(TaskCommandError::MissingField),
+            },
             Some("export") => match command.next() {
                 Some(num_str) => {
-                    num_str.parse::<usize>().or(Err(TaskCommandError::NotANumber))?;
-                    Ok(CommandRequest::None)
+                    let list_index = num_str
+                        .parse::<usize>()
+                        .or(Err(TaskCommandError::NotANumber))?;
+                    self.save_list(&task_lists[list_index])
                 }
                 None => Err(TaskCommandError::MissingField),
-            }
-            */
+            },
             None => Ok(CommandRequest::SetActive),
             Some(_) => Err(TaskCommandError::UnknownCommand),
         }
@@ -289,6 +291,28 @@ impl TaskListTab {
         Ok(CommandRequest::None)
     }
 
+    /*
+        Loads a list from the disk and adds it to the current list of tasklists
+    */
+    fn load_list(
+        &mut self,
+        filename: &str,
+        task_lists: &mut Vec<TaskList>,
+    ) -> Result<CommandRequest, TaskCommandError> {
+        let mut file = match File::open(filename) {
+            Ok(f) => f,
+            Err(_) => return Err(TaskCommandError::InvalidFilePath),
+        };
+        let mut data = Vec::new();
+        _ = file.read_to_end(&mut data).unwrap();
+        let temp: TaskList = match serde_json::from_slice(&data) {
+            Ok(v) => v,
+            Err(_) => return Err(TaskCommandError::InvalidFileFormat),
+        };
+        task_lists.push(temp);
+        Ok(CommandRequest::None)
+    }
+
     fn save_data(
         &mut self,
         filename: &str,
@@ -299,6 +323,16 @@ impl TaskListTab {
             Err(_) => return Err(TaskCommandError::InvalidFilePath),
         };
         let out = serde_json::to_vec(&task_lists).unwrap();
+        _ = file.write_all(&out).unwrap();
+        Ok(CommandRequest::None)
+    }
+
+    fn save_list(&mut self, task_list: &TaskList) -> Result<CommandRequest, TaskCommandError> {
+        let mut file = match File::create(format!("{}.json", task_list.name)) {
+            Ok(f) => f,
+            Err(_) => return Err(TaskCommandError::InvalidFilePath),
+        };
+        let out = serde_json::to_vec(task_list).unwrap();
         _ = file.write_all(&out).unwrap();
         Ok(CommandRequest::None)
     }
