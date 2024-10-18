@@ -390,7 +390,7 @@ impl TextEntryPopup {
 
 impl Widget for &TextEntryPopup {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let vertical = Layout::vertical([self.max_lines]).flex(Flex::Center);
+        let vertical = Layout::vertical([self.max_lines + 2]).flex(Flex::Center);
         let horizontal = Layout::horizontal([60]).flex(Flex::Center);
         let [area] = vertical.areas(area);
         let [area] = horizontal.areas(area);
@@ -412,7 +412,17 @@ impl Widget for &TextEntryPopup {
 
         Paragraph::new(self.text_field.get_str())
             .wrap(Wrap { trim: true })
+            .style(THEME.popup_selected)
             .render(win_area, buf);
+
+        let cursor_pos = self.text_field.get_cursor_pos() as i32;
+        Span::from("█").style(THEME.popup_selected).render(
+            win_area.offset(Offset {
+                x: cursor_pos % 58,
+                y: cursor_pos / 58,
+            }),
+            buf,
+        );
     }
 }
 
