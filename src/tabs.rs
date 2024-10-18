@@ -1,5 +1,8 @@
 use crate::{
-    popup::{ConfirmationField, ConfirmationPopup, PopupStatus, TaskEditorPopup, TaskSource},
+    popup::{
+        ConfirmationField, ConfirmationPopup, PopupStatus, TaskEditorPopup, TaskSource,
+        TextEntryPopup,
+    },
     theme::THEME,
     widgets::Calendar,
     CommandRequest,
@@ -135,6 +138,7 @@ pub struct TaskListTab {
 
     pub new_task_window: TaskEditorPopup,
     pub delete_conf_window: ConfirmationPopup,
+    pub new_tasklist_window: TextEntryPopup,
 
     pub selected_sub_task: usize,
 }
@@ -177,6 +181,18 @@ impl TaskListTab {
                 PopupStatus::Canceled => {
                     self.delete_conf_window.close();
                 }
+            }
+        } else if self.new_tasklist_window.status == PopupStatus::InUse {
+            input_captured = self.new_tasklist_window.handle_input(key);
+
+            match self.new_tasklist_window.status {
+                PopupStatus::InUse | PopupStatus::Closed => {}
+                PopupStatus::Canceled => self.new_tasklist_window.reset(),
+                PopupStatus::Confirmed => task_lists.push(TaskList {
+                    name: self.new_tasklist_window.take(),
+                    selected: 0,
+                    tasks: Vec::new(),
+                }),
             }
         } else {
             match key {
@@ -244,6 +260,10 @@ impl TaskListTab {
         match command.next() {
             Some("new") => {
                 self.new_task();
+                Ok(CommandRequest::None)
+            }
+            Some("newlist") => {
+                self.new_task_list();
                 Ok(CommandRequest::None)
             }
             Some("save") => match command.next() {
@@ -401,6 +421,10 @@ impl TaskListTab {
         self.new_task_window.new_task();
     }
 
+    fn new_task_list(&mut self) {
+        self.new_tasklist_window.show();
+    }
+
     fn next_tab(&mut self, task_lists: &mut Vec<TaskList>) {
         if task_lists.is_empty() {
             return;
@@ -554,6 +578,8 @@ impl TaskListTab {
             self.new_task_window.render(area, buf);
         } else if self.delete_conf_window.status == PopupStatus::InUse {
             self.delete_conf_window.render(area, buf);
+        } else if self.new_tasklist_window.status == PopupStatus::InUse {
+            self.new_tasklist_window.render(area, buf);
         }
     }
 }
