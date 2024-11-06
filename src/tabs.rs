@@ -183,35 +183,39 @@ impl TaskListTab {
                 KeyCode::Char('h') => self.previous_tab(task_lists),
                 KeyCode::Char('l') => self.next_tab(task_lists),
                 KeyCode::Char('k') => {
-                    if selected_list.tasks[selected_list.selected].expanded {
-                        if self.selected_sub_task == 0 {
+                    if selected_list.tasks.len() > 0 {
+                        if selected_list.tasks[selected_list.selected].expanded {
+                            if self.selected_sub_task == 0 {
+                                selected_list.previous_task();
+                                if selected_list.tasks[selected_list.selected].expanded {
+                                    self.selected_sub_task =
+                                        selected_list.tasks[selected_list.selected].sub_tasks.len();
+                                }
+                            } else {
+                                self.selected_sub_task -= 1;
+                            }
+                        } else {
                             selected_list.previous_task();
                             if selected_list.tasks[selected_list.selected].expanded {
                                 self.selected_sub_task =
                                     selected_list.tasks[selected_list.selected].sub_tasks.len();
                             }
-                        } else {
-                            self.selected_sub_task -= 1;
-                        }
-                    } else {
-                        selected_list.previous_task();
-                        if selected_list.tasks[selected_list.selected].expanded {
-                            self.selected_sub_task =
-                                selected_list.tasks[selected_list.selected].sub_tasks.len();
                         }
                     }
                 }
                 KeyCode::Char('j') => {
-                    if selected_list.tasks[selected_list.selected].expanded {
-                        self.selected_sub_task += 1;
-                        if self.selected_sub_task
-                            > selected_list.tasks[selected_list.selected].sub_tasks.len()
-                        {
-                            self.selected_sub_task = 0;
+                    if selected_list.tasks.len() > 0 {
+                        if selected_list.tasks[selected_list.selected].expanded {
+                            self.selected_sub_task += 1;
+                            if self.selected_sub_task
+                                > selected_list.tasks[selected_list.selected].sub_tasks.len()
+                            {
+                                self.selected_sub_task = 0;
+                                selected_list.next_task();
+                            }
+                        } else {
                             selected_list.next_task();
                         }
-                    } else {
-                        selected_list.next_task();
                     }
                 }
                 KeyCode::Char('a') => self.new_task(),
@@ -416,37 +420,46 @@ impl TaskListTab {
     }
 
     pub fn render(&self, area: Rect, buf: &mut Buffer, task_lists: &Vec<TaskList>) {
-        let vertical = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]);
-        let [task_bar, tasks_area] = vertical.areas(area);
+        let horiz =
+            Layout::horizontal(vec![Constraint::Percentage(70), Constraint::Percentage(30)]);
+        let [list_area, details_area] = horiz.areas(area);
+
+        self.render_list(list_area, buf, task_lists);
+        self.render_details(details_area, buf, task_lists);
+
+        // Popup Rendering
+        if PopupStatus::InUse == self.new_task_window.status {
+            self.new_task_window.render(area, buf);
+        } else if self.delete_conf_window.status == PopupStatus::InUse {
+            self.delete_conf_window.render(area, buf);
+        }
+    }
+
+    fn render_list(&self, area: Rect, buf: &mut Buffer, task_lists: &Vec<TaskList>) {
+        let tasks_border = Block::bordered()
+            .border_style(THEME.task_border)
+            .title("Tasks")
+            .style(THEME.task)
+            .border_type(BorderType::Rounded);
+        let mut tasks_inner_area = tasks_border.inner(area);
 
         // Task Bar Rendering
         let mut spans: Vec<Span> = Vec::with_capacity(task_lists.len() + 1);
-        let mut highlight_pos: Rect = Rect {
-            x: tasks_area.x + 11,
-            y: tasks_area.y,
-            width: 0,
-            height: 1,
-        }; // 11 is length of "Task Lists:"
         spans.push(Span::from("Task Lists:"));
 
         for (i, list) in task_lists.iter().enumerate() {
-            if highlight_pos.width == 0 {
-                if i == self.selected {
-                    highlight_pos.width = list.name.len() as u16 + 2;
-                } else {
-                    highlight_pos.x += list.name.len() as u16 + 2;
-                }
-            }
-
             spans.push(
                 Span::from(format!(" {} ", list.name)).style(if i == self.selected {
-                    THEME.root_tab_selected
+                    THEME.task_list_selected
                 } else {
-                    THEME.root
+                    THEME.task_list
                 }),
             );
         }
-        Line::from(spans).style(THEME.root).render(task_bar, buf);
+        Line::from(spans)
+            .style(THEME.task)
+            .render(tasks_inner_area, buf);
+        tasks_inner_area = tasks_inner_area.offset(Offset { x: 0, y: 1 });
 
         // Task List Rendering
         let horizontal = Layout::horizontal([
@@ -456,21 +469,9 @@ impl TaskListTab {
             Constraint::Length(10),
         ]);
 
-        let tasks_border = Block::bordered()
-            .border_style(THEME.task_border)
-            .border_type(BorderType::Rounded);
+        tasks_border.render(area, buf);
 
-        let mut tasks_inner_area = tasks_border.inner(tasks_area);
-
-        tasks_border.render(tasks_area, buf);
-        // Render highlight bar
-        Block::bordered()
-            .style(THEME.task_selected)
-            .borders(Borders::TOP)
-            .border_type(BorderType::Rounded)
-            .render(highlight_pos, buf);
-
-        let [_, _, date_area, duration_area] = horizontal.areas(tasks_area);
+        let [_, _, date_area, duration_area] = horizontal.areas(area);
         Span::styled("Date", THEME.task_title).render(date_area, buf);
         Span::styled("Duration", THEME.task_title).render(duration_area, buf);
 
@@ -548,12 +549,24 @@ impl TaskListTab {
                 }
             }
         }
+    }
 
-        // Popup Rendering
-        if PopupStatus::InUse == self.new_task_window.status {
-            self.new_task_window.render(area, buf);
-        } else if self.delete_conf_window.status == PopupStatus::InUse {
-            self.delete_conf_window.render(area, buf);
+    fn render_details(&self, area: Rect, buf: &mut Buffer, task_lists: &Vec<TaskList>) {
+        let border = Block::bordered()
+            .border_style(THEME.task_border)
+            .style(THEME.task)
+            .title("Details")
+            .border_type(BorderType::Rounded);
+        let inner_area = border.inner(area);
+
+        border.render(area, buf);
+
+        let selected_list = &task_lists[self.selected];
+
+        if selected_list.tasks.len() != 0 {
+            Span::from(&selected_list.tasks[selected_list.selected].name).render(inner_area, buf);
+        } else {
+            Span::from("No task selected").render(inner_area, buf);
         }
     }
 }
