@@ -10,7 +10,7 @@ use ratatui::{
     prelude::*,
     widgets::{
         block::{Position, Title},
-        Block, BorderType, Clear, Paragraph,
+        Block, BorderType, Clear, Paragraph, Wrap,
     },
 };
 
@@ -325,6 +325,104 @@ impl Widget for &TaskEditorPopup {
                 buf,
             );
         }
+    }
+}
+
+#[derive(Default)]
+pub struct TextEntryPopup {
+    pub text_field: TextEntry,
+    pub title: String,
+    pub status: PopupStatus,
+    pub max_lines: u16,
+}
+
+impl TextEntryPopup {
+    pub fn handle_input(&mut self, key: KeyCode) -> bool {
+        let mut input_captured = true;
+
+        match key {
+            KeyCode::Enter => self.confirm(),
+            KeyCode::Esc => self.cancel(),
+            KeyCode::Char(c) => self.text_field.insert(c),
+            KeyCode::Backspace => self.text_field.remove(),
+            KeyCode::Left => self.text_field.move_cursor_left(),
+            KeyCode::Right => self.text_field.move_cursor_right(),
+            _ => input_captured = false,
+        }
+
+        input_captured
+    }
+
+    pub fn new(title: String, max_lines: u16) -> Self {
+        TextEntryPopup {
+            text_field: TextEntry::new(),
+            title,
+            status: PopupStatus::Closed,
+            max_lines,
+        }
+    }
+
+    fn confirm(&mut self) {
+        self.status = PopupStatus::Confirmed;
+    }
+
+    fn cancel(&mut self) {
+        self.status = PopupStatus::Canceled;
+    }
+
+    pub fn close(&mut self) {
+        self.status = PopupStatus::Closed;
+    }
+
+    pub fn show(&mut self) {
+        self.status = PopupStatus::InUse;
+    }
+
+    pub fn reset(&mut self) {
+        self.close();
+        self.text_field.clear();
+    }
+
+    pub fn take(&mut self) -> String {
+        std::mem::take(&mut self.text_field.take())
+    }
+}
+
+impl Widget for &TextEntryPopup {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let vertical = Layout::vertical([self.max_lines + 2]).flex(Flex::Center);
+        let horizontal = Layout::horizontal([60]).flex(Flex::Center);
+        let [area] = vertical.areas(area);
+        let [area] = horizontal.areas(area);
+
+        let window = Block::bordered()
+            .style(THEME.popup)
+            .border_style(THEME.popup)
+            .border_type(BorderType::Rounded)
+            .title(self.title.as_str())
+            .title(
+                Title::from(format!(" [Esc] to Cancel [Enter] to Confirm "))
+                    .alignment(Alignment::Right)
+                    .position(Position::Bottom),
+            );
+
+        let win_area = window.inner(area);
+        Clear.render(win_area, buf);
+        window.render(area, buf);
+
+        Paragraph::new(self.text_field.get_str())
+            .wrap(Wrap { trim: true })
+            .style(THEME.popup_selected)
+            .render(win_area, buf);
+
+        let cursor_pos = self.text_field.get_cursor_pos() as i32;
+        Span::from("█").style(THEME.popup_selected).render(
+            win_area.offset(Offset {
+                x: cursor_pos % 58,
+                y: cursor_pos / 58,
+            }),
+            buf,
+        );
     }
 }
 

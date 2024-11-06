@@ -374,6 +374,7 @@ fn main() -> io::Result<()> {
                 "Confirm delete".to_string(),
                 "Are you sure you want to delete?".to_string(),
             ),
+            new_tasklist_window: TextEntryPopup::new("Enter TaskList Name".to_string(), 3),
             selected_sub_task: 0,
         },
         calendar_tab: CalendarTab::default(),
