@@ -58,6 +58,7 @@ pub enum TaskCommandError {
     InvalidFileFormat,
     NotANumber,
     MissingField,
+    InvalidOption,
 }
 
 #[derive(Default, Clone, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
@@ -318,6 +319,13 @@ impl TaskListTab {
             }
             Some("newlist") => {
                 self.new_task_list();
+                Ok(CommandRequest::None)
+            }
+            Some("sort") => {
+                match command.next() {
+                    Some("name") | None => task_lists.sort_by(|a, b| a.name.cmp(&b.name)),
+                    Some(_) => return Err(TaskCommandError::InvalidOption),
+                };
                 Ok(CommandRequest::None)
             }
             Some("save") => match command.next() {

@@ -235,6 +235,9 @@ impl App {
                 }
                 Err(TaskCommandError::MissingField) => self.post_error("Missing Field".to_string()),
                 Err(TaskCommandError::NotANumber) => self.post_error("Not A Number".to_string()),
+                Err(TaskCommandError::InvalidOption) => {
+                    self.post_error("Invalid Option".to_string())
+                }
                 Ok(CommandRequest::None) => {}
                 Ok(CommandRequest::SetActive) => self.current_tab = Tab::TaskList,
             },
