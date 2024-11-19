@@ -323,7 +323,9 @@ impl TaskListTab {
             }
             Some("sort") => {
                 match command.next() {
-                    Some("name") | None => task_lists.sort_by(|a, b| a.name.cmp(&b.name)),
+                    Some("name") | None => task_lists[self.selected]
+                        .tasks
+                        .sort_by(|a, b| a.name.cmp(&b.name)),
                     Some(_) => return Err(TaskCommandError::InvalidOption),
                 };
                 Ok(CommandRequest::None)
