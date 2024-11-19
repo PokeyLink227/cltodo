@@ -79,6 +79,15 @@ impl TaskStatus {
         }
     }
 
+    pub fn get_name(&self) -> &str {
+        match self {
+            TaskStatus::NotStarted => "Not Started",
+            TaskStatus::InProgress => "In Progress",
+            TaskStatus::Finished => "Finished",
+            TaskStatus::Deleted => "Deleted",
+        }
+    }
+
     pub fn cycle_next(&mut self) {
         *self = match *self {
             TaskStatus::NotStarted => TaskStatus::InProgress,
@@ -630,11 +639,26 @@ impl TaskListTab {
 
         let selected_list = &task_lists[self.selected];
 
-        if selected_list.tasks.len() != 0 {
-            Span::from(&selected_list.tasks[selected_list.selected].name).render(inner_area, buf);
-        } else {
+        if selected_list.tasks.is_empty() {
             Span::from("No task selected").render(inner_area, buf);
+            return;
         }
+
+        let task = &selected_list.tasks[selected_list.selected];
+        let vertical =
+            Layout::vertical([1, 1, task.name.len() as u16 / inner_area.width + 1, 1, 1]);
+        let [status, name, desc, date, duration] = vertical.areas(inner_area);
+
+        Span::from(format!("Status: {}", task.status.get_name())).render(status, buf);
+
+        // renders in desc area right now because tasks do not have a
+        // seperation between name and desc right now
+        Paragraph::new(task.name.as_str())
+            .wrap(Wrap { trim: false })
+            .render(desc, buf);
+
+        Span::from(format!("Date: {}", task.date)).render(date, buf);
+        Span::from(format!("Duration: {}", task.duration)).render(duration, buf);
     }
 }
 
