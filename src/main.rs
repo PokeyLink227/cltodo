@@ -54,6 +54,7 @@ pub struct App {
     frames_since_error: Option<u32>,
 
     task_lists: Vec<TaskList>,
+    task_lists_backup: Vec<TaskList>,
     profile: UserProfile,
     options: Options,
 
@@ -115,6 +116,8 @@ impl App {
         // initialization
         self.command_field.set_text("t load".to_string());
         self.process_command();
+        self.task_lists_backup = self.task_lists.clone();
+        self.task_lists_backup.sort();
 
         // main loop
         while self.mode != RunningMode::Exiting {
@@ -254,9 +257,15 @@ impl App {
     }
 
     fn try_quit(&mut self) {
-        self.save_window.show();
-    }
+        let mut sorted = self.task_lists.clone();
+        sorted.sort();
 
+        if sorted == self.task_lists_backup {
+            self.mode = RunningMode::Exiting;
+        } else {
+            self.save_window.show();
+        }
+    }
     fn next_tab(&mut self) {
         self.current_tab = match self.current_tab {
             Tab::TaskList => Tab::Calendar,
@@ -352,6 +361,7 @@ fn main() -> io::Result<()> {
         error_str: String::new(),
         frames_since_error: None,
         task_lists: Vec::new(),
+        task_lists_backup: Vec::new(),
         profile: UserProfile {
             name: "Thomas".to_string(),
         },
@@ -382,7 +392,7 @@ fn main() -> io::Result<()> {
         profile_tab: ProfileTab {},
         save_window: ConfirmationPopup::new(
             "Confirm Save".to_string(),
-            "There is unsaved work. Save now?".to_string(),
+            "There is unsaved work. Save and Quit?".to_string(),
         ),
     };
     app.run(&mut terminal)?;

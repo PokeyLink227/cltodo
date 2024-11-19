@@ -11,9 +11,9 @@ use chrono::{Datelike, NaiveDate, Weekday};
 use crossterm::event::KeyCode;
 use ratatui::{layout::Offset, prelude::*, widgets::*};
 use serde::{Deserialize, Serialize};
-use std::{fs::File, io::prelude::*, str::Split};
+use std::{cmp::Ordering, fs::File, io::prelude::*, str::Split};
 
-#[derive(Default, Copy, Clone, Debug, Deserialize, Serialize)]
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
 pub struct Duration {
     pub days: u16,
     pub hours: u8,
@@ -60,7 +60,7 @@ pub enum TaskCommandError {
     MissingField,
 }
 
-#[derive(Default, Clone, Deserialize, Serialize)]
+#[derive(Default, Clone, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
 pub enum TaskStatus {
     #[default]
     NotStarted,
@@ -89,7 +89,7 @@ impl TaskStatus {
     }
 }
 
-#[derive(Default, Clone, Deserialize, Serialize)]
+#[derive(Default, Clone, Eq, PartialOrd, Ord, Deserialize, Serialize)]
 pub struct Task {
     pub name: String,
     pub status: TaskStatus,
@@ -101,11 +101,52 @@ pub struct Task {
     pub expanded: bool,
 }
 
-#[derive(Deserialize, Serialize)]
+impl PartialEq for Task {
+    fn eq(&self, other: &Self) -> bool {
+        if self.name != other.name {
+            return false;
+        }
+        if self.status != other.status {
+            return false;
+        }
+        if self.duration != other.duration {
+            return false;
+        }
+        if self.date != other.date {
+            return false;
+        }
+
+        let mut sorted_self = self.sub_tasks.clone();
+        sorted_self.sort();
+        let mut sorted_other = other.sub_tasks.clone();
+        sorted_other.sort();
+
+        sorted_self == sorted_other
+    }
+}
+
+#[derive(Deserialize, Serialize, Clone, Default, Eq, PartialOrd, Ord)]
 pub struct TaskList {
     pub name: String,
-    pub selected: usize,
     pub tasks: Vec<Task>,
+
+    #[serde(skip)]
+    pub selected: usize,
+}
+
+impl PartialEq for TaskList {
+    fn eq(&self, other: &Self) -> bool {
+        if self.name != other.name {
+            return false;
+        }
+
+        let mut sorted_self = self.tasks.clone();
+        sorted_self.sort();
+        let mut sorted_other = other.tasks.clone();
+        sorted_other.sort();
+
+        sorted_self == sorted_other
+    }
 }
 
 impl TaskList {
