@@ -515,6 +515,7 @@ impl TaskListTab {
         let tasks_border = Block::bordered()
             .border_style(THEME.task_border)
             .title("Tasks")
+            .title_style(THEME.task_title)
             .style(THEME.task)
             .border_type(BorderType::Rounded);
         let mut tasks_inner_area = tasks_border.inner(area);
@@ -632,6 +633,7 @@ impl TaskListTab {
             .border_style(THEME.task_border)
             .style(THEME.task)
             .title("Details")
+            .title_style(THEME.task_title)
             .border_type(BorderType::Rounded);
         let inner_area = border.inner(area);
 
