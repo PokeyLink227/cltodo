@@ -326,6 +326,9 @@ impl TaskListTab {
                     Some("name") | None => task_lists[self.selected]
                         .tasks
                         .sort_by(|a, b| a.name.cmp(&b.name)),
+                    Some("date") => task_lists[self.selected]
+                        .tasks
+                        .sort_by(|a, b| a.date.cmp(&b.date)),
                     Some(_) => return Err(TaskCommandError::InvalidOption),
                 };
                 Ok(CommandRequest::None)
