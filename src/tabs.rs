@@ -1,11 +1,11 @@
 use crate::{
+    CommandRequest,
     popup::{
         ConfirmationField, ConfirmationPopup, PopupStatus, TaskEditorPopup, TaskSource,
         TextEntryPopup,
     },
     theme::THEME,
     widgets::Calendar,
-    CommandRequest,
 };
 use chrono::{Datelike, NaiveDate, Weekday};
 use crossterm::event::KeyCode;

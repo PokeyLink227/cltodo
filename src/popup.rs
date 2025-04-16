@@ -1,5 +1,5 @@
 use crate::{
-    tabs::{disp_md, Task, TaskStatus},
+    tabs::{Task, TaskStatus, disp_md},
     theme::THEME,
     widgets::TextEntry,
 };
@@ -9,8 +9,8 @@ use ratatui::{
     layout::{Flex, Offset},
     prelude::*,
     widgets::{
-        block::{Position, Title},
         Block, BorderType, Clear, Paragraph, Wrap,
+        block::{Position, Title},
     },
 };
 

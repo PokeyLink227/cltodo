@@ -157,7 +157,7 @@ impl App {
     }
 
     fn render_frame(&self, frame: &mut Frame) {
-        frame.render_widget(self, frame.size());
+        frame.render_widget(self, frame.area());
     }
 
     fn handle_events(&mut self) -> io::Result<()> {
