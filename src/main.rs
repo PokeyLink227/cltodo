@@ -94,13 +94,11 @@ impl Widget for &App {
                 Span::from(self.command_field.get_str()),
             ])
             .render(bottom_bar, buf);
-            Span::from("█").render(
-                bottom_bar.offset(Offset {
-                    x: 1 + self.command_field.get_cursor_pos() as i32,
-                    y: 0,
-                }),
-                buf,
-            );
+            buf[(
+                bottom_bar.x + 1 + self.command_field.get_cursor_pos() as u16,
+                bottom_bar.y,
+            )]
+                .set_style(THEME.root_cursor);
         } else if let Some(_) = self.frames_since_error {
             Span::from(format!("Error: {}", self.error_str))
                 .style(THEME.command_error)

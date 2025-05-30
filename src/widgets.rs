@@ -4,10 +4,16 @@ use ratatui::{layout::Offset, prelude::*, widgets::*};
 use crate::theme::THEME;
 use itertools::Itertools;
 
-#[derive(Default)]
 pub struct TextEntry {
     text: String,
     cursor_pos: usize,
+    max_len: usize,
+}
+
+impl Default for TextEntry {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TextEntry {
@@ -15,15 +21,32 @@ impl TextEntry {
         TextEntry {
             text: String::new(),
             cursor_pos: 0,
+            max_len: usize::MAX,
         }
     }
 
+    pub fn with_text(text: String) -> Self {
+        let cursor_pos = text.len();
+        TextEntry {
+            text,
+            cursor_pos,
+            max_len: usize::MAX,
+        }
+    }
+
+    pub fn with_max(mut self, len: usize) -> Self {
+        self.max_len = len;
+        self
+    }
+
     pub fn take(&mut self) -> String {
+        self.move_cursor_home();
         std::mem::take(&mut self.text)
     }
 
     pub fn set_text(&mut self, new_text: String) {
         self.text = new_text;
+        self.cursor_pos = self.text.len();
     }
 
     pub fn clear(&mut self) {
@@ -68,14 +91,17 @@ impl TextEntry {
     }
 
     pub fn insert(&mut self, c: char) {
-        self.text.insert(self.byte_index(), c);
-        self.move_cursor_right();
+        if self.cursor_pos < self.max_len {
+            self.text.insert(self.byte_index(), c);
+            self.move_cursor_right();
+        }
     }
 
     pub fn remove(&mut self) {
-        if self.text.len() == 0 {
+        if self.text.is_empty() {
             return;
         }
+
         // stops backspace from acting like del when at the beginning of the string
         if self.cursor_pos == 0 {
             return;

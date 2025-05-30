@@ -3,10 +3,12 @@ use ratatui::style::{Color, Modifier, Style};
 pub struct Theme {
     pub root: Style,
     pub root_tab_selected: Style,
+    pub root_cursor: Style,
     pub command_error: Style,
     pub popup: Style,
     pub popup_focused: Style,
     pub popup_selected: Style,
+    pub popup_cursor: Style,
     pub task: Style,
     pub task_selected: Style,
     pub task_list: Style,
@@ -26,11 +28,13 @@ pub struct CalendarStyle {
 
 pub const THEME: Theme = Theme {
     root: Style::new().fg(WHITE).bg(DARKER_GRAY),
+    root_cursor: Style::new().fg(DARKER_GRAY).bg(WHITE),
     root_tab_selected: Style::new().fg(YELLOW).bg(DARK_GRAY),
     command_error: Style::new().fg(WHITE).bg(RED),
     popup: Style::new().fg(WHITE),
     popup_focused: Style::new().fg(WHITE).bg(DARK_GRAY),
     popup_selected: Style::new().fg(YELLOW).bg(DARK_GRAY),
+    popup_cursor: Style::new().fg(DARK_GRAY).bg(YELLOW),
     task: Style::new().fg(WHITE),
     task_selected: Style::new().fg(YELLOW),
     task_list: Style::new().fg(WHITE),
