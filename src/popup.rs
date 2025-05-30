@@ -83,15 +83,13 @@ pub struct TaskEditorPopup {
 
 impl TaskEditorPopup {
     pub fn handle_input(&mut self, key: KeyCode) -> bool {
-        let mut input_captured = true;
-
         match self.selected_field {
             TaskEditorField::Description => match key {
                 KeyCode::Char(c) => self.desc_field.insert(c),
                 KeyCode::Backspace => self.desc_field.remove(),
                 KeyCode::Left => self.desc_field.move_cursor_left(),
                 KeyCode::Right => self.desc_field.move_cursor_right(),
-                _ => input_captured = false,
+                _ => {}
             },
             /*
             TaskEditorField::Cancel => match key {
@@ -108,7 +106,7 @@ impl TaskEditorPopup {
                 KeyCode::Char('2') => self.task.status = TaskStatus::InProgress,
                 KeyCode::Char('3') => self.task.status = TaskStatus::Finished,
                 KeyCode::Char('j') => self.task.status.cycle_next(),
-                _ => input_captured = false,
+                _ => {}
             },
             TaskEditorField::Date => match key {
                 KeyCode::Char('j') => self.task.date = self.task.date.succ_opt().unwrap(),
@@ -125,10 +123,10 @@ impl TaskEditorPopup {
                     self.editing_date = true;
                     self.date_field.insert(c);
                 }
-                _ => input_captured = false,
+                _ => {}
             },
             TaskEditorField::Duration => match key {
-                _ => input_captured = false,
+                _ => {}
             },
         }
 
@@ -148,7 +146,7 @@ impl TaskEditorPopup {
         }
 
         // ensure app cannot be exited through hotkey while popup is open
-        input_captured || key == KeyCode::Char('q')
+        true
     }
 
     pub fn take_task(&mut self) -> Task {
@@ -318,8 +316,6 @@ pub struct TextEntryPopup {
 
 impl TextEntryPopup {
     pub fn handle_input(&mut self, key: KeyCode) -> bool {
-        let mut input_captured = true;
-
         match key {
             KeyCode::Enter => self.confirm(),
             KeyCode::Esc => self.cancel(),
@@ -327,10 +323,10 @@ impl TextEntryPopup {
             KeyCode::Backspace => self.text_field.remove(),
             KeyCode::Left => self.text_field.move_cursor_left(),
             KeyCode::Right => self.text_field.move_cursor_right(),
-            _ => input_captured = false,
+            _ => {}
         }
 
-        input_captured
+        true
     }
 
     pub fn new(title: String, max_lines: u16) -> Self {
@@ -426,34 +422,29 @@ impl ConfirmationPopup {
         match key {
             KeyCode::Tab => {
                 self.selected_field.cycle_next();
-                true
             }
             KeyCode::BackTab => {
                 self.selected_field.cycle_next();
-                true
             }
             KeyCode::Char('y') => {
                 self.selected_field = ConfirmationField::Yes;
                 self.status = PopupStatus::Confirmed;
-                true
             }
             KeyCode::Char('n') => {
                 self.selected_field = ConfirmationField::No;
                 self.status = PopupStatus::Confirmed;
-                true
             }
             KeyCode::Esc => {
                 self.selected_field = ConfirmationField::No;
                 self.status = PopupStatus::Canceled;
-                true
             }
             KeyCode::Enter => {
                 self.status = PopupStatus::Confirmed;
-                true
             }
-            KeyCode::Char('q') => true,
-            _ => false,
+            _ => {}
         }
+
+        true
     }
 
     pub fn new(new_title: String, new_body: String) -> ConfirmationPopup {
