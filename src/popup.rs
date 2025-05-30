@@ -250,20 +250,6 @@ impl Widget for &TaskEditorPopup {
 
         let vert = Layout::vertical([1, 1, 1]);
         let [top_area, mid_area, bot_area] = vert.areas(win_area);
-        /*
-        let bot_horiz = Layout::horizontal([
-            Constraint::Min(0),
-            Constraint::Length(10),
-            Constraint::Length(11),
-        ]);
-        let [_, cancel_area, quit_area] = bot_horiz.areas(bot_area);
-        Paragraph::new(" [Cancel] ")
-            .style(self.get_style(TaskEditorField::Cancel))
-            .render(cancel_area, buf);
-        Paragraph::new(" [Confirm] ")
-            .style(self.get_style(TaskEditorField::Confirm))
-            .render(quit_area, buf);
-            */
 
         let mid_horiz = Layout::horizontal([
             Constraint::Length(10),
