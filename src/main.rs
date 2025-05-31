@@ -4,7 +4,10 @@ use ratatui::{
     prelude::*,
     widgets::{Block, Widget},
 };
-use std::io::{self};
+use std::{
+    io::{self},
+    time::Instant,
+};
 
 mod popup;
 mod tabs;
@@ -51,6 +54,8 @@ pub struct App {
 
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        let frame_start = Instant::now();
+
         let vertical = Layout::vertical([
             Constraint::Length(1),
             Constraint::Min(1),
@@ -88,6 +93,12 @@ impl Widget for &App {
                 .render(bottom_bar, buf);
         } else {
             self.render_bottom_bar(bottom_bar, buf);
+        }
+
+        let frame_time = frame_start.elapsed().as_millis();
+
+        if false {
+            Span::raw(format!(" {}   ", frame_time)).render(title_bar, buf);
         }
     }
 }
