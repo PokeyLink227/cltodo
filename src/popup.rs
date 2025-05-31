@@ -6,12 +6,9 @@ use crate::{
 use chrono::{Datelike, Days, NaiveDate};
 use crossterm::event::KeyCode;
 use ratatui::{
-    layout::{Flex, Offset},
+    layout::Flex,
     prelude::*,
-    widgets::{
-        Block, BorderType, Clear, Paragraph, Wrap,
-        block::{Position, Title},
-    },
+    widgets::{Block, BorderType, Clear, Paragraph, Wrap},
 };
 
 #[derive(Default, PartialEq)]
@@ -247,7 +244,7 @@ impl Widget for &TaskEditorPopup {
         window.render(area, buf);
 
         let vert = Layout::vertical([1, 1, 1]);
-        let [top_area, mid_area, bot_area] = vert.areas(win_area);
+        let [top_area, mid_area, _bot_area] = vert.areas(win_area);
 
         let mid_horiz = Layout::horizontal([
             Constraint::Length(10),

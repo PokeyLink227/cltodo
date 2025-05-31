@@ -1,18 +1,10 @@
-#![allow(unused_variables, dead_code, unused_imports)]
-
 use crate::{popup::*, tabs::*, theme::THEME, widgets::TextEntry};
-use chrono::NaiveDate;
 use crossterm::event::{self, KeyCode};
 use ratatui::{
-    layout::{Flex, Offset},
     prelude::*,
-    widgets::{Block, Paragraph, Widget},
+    widgets::{Block, Widget},
 };
-use std::{
-    io::{self},
-    mem,
-    time::SystemTime,
-};
+use std::io::{self};
 
 mod popup;
 mod tabs;
@@ -32,17 +24,11 @@ enum RunningMode {
     Command,
 }
 
+#[derive(PartialEq, Eq)]
 enum Tab {
     TaskList,
     Calendar,
     Options,
-    Profile,
-}
-
-enum Dialogue {
-    None,
-    Save,
-    NewTask,
 }
 
 pub struct App {
@@ -55,13 +41,11 @@ pub struct App {
 
     task_lists: Vec<TaskList>,
     task_lists_backup: Vec<TaskList>,
-    profile: UserProfile,
     options: Options,
 
     task_list_tab: TaskListTab,
     calendar_tab: CalendarTab,
     options_tab: OptionsTab,
-    profile_tab: ProfileTab,
     save_window: ConfirmationPopup,
 }
 
@@ -81,7 +65,6 @@ impl Widget for &App {
             Tab::TaskList => self.task_list_tab.render(canvas, buf, &self.task_lists),
             Tab::Calendar => self.calendar_tab.render(canvas, buf),
             Tab::Options => self.options_tab.render(canvas, buf, &self.options),
-            Tab::Profile => self.profile_tab.render(canvas, buf, &self.profile),
         }
 
         if self.save_window.status == PopupStatus::InUse {
@@ -166,8 +149,8 @@ impl App {
                     if !self.dispatch_input(key.code) {
                         match key.code {
                             KeyCode::Char('q') => self.try_quit(),
-                            KeyCode::Char('n') => self.next_tab(),
-                            KeyCode::Char('N') => self.previous_tab(),
+                            KeyCode::Tab => self.next_tab(),
+                            KeyCode::BackTab => self.previous_tab(),
                             KeyCode::Char(':') => {
                                 self.mode = RunningMode::Command;
                                 self.frames_since_error = None;
@@ -208,7 +191,6 @@ impl App {
                 Tab::TaskList => self.task_list_tab.handle_input(&mut self.task_lists, key),
                 Tab::Calendar => self.calendar_tab.handle_input(key),
                 Tab::Options => self.options_tab.handle_input(key),
-                Tab::Profile => self.profile_tab.handle_input(key),
             }
         }
     }
@@ -241,7 +223,6 @@ impl App {
             },
             "calendar" | "c" => self.current_tab = Tab::Calendar,
             "options" | "o" => self.current_tab = Tab::Options,
-            "profile" | "p" => self.current_tab = Tab::Profile,
             "quit" | "q" => self.try_quit(),
             "quit!" | "q!" => self.force_quit(),
             _ => self.post_error(format!("Unknown Command: {}", self.command_field.get_str())),
@@ -267,21 +248,20 @@ impl App {
             self.save_window.show();
         }
     }
+
     fn next_tab(&mut self) {
         self.current_tab = match self.current_tab {
             Tab::TaskList => Tab::Calendar,
             Tab::Calendar => Tab::Options,
-            Tab::Options => Tab::Profile,
-            Tab::Profile => Tab::TaskList,
+            Tab::Options => Tab::TaskList,
         }
     }
 
     fn previous_tab(&mut self) {
         self.current_tab = match self.current_tab {
-            Tab::TaskList => Tab::Profile,
+            Tab::TaskList => Tab::Options,
             Tab::Calendar => Tab::TaskList,
             Tab::Options => Tab::Calendar,
-            Tab::Profile => Tab::Options,
         }
     }
 
@@ -291,40 +271,28 @@ impl App {
             Constraint::Length(7),
             Constraint::Length(10),
             Constraint::Length(9),
-            Constraint::Length(9),
         ]);
-        let [app_name, list_tab, calendar_tab, options_tab, profile_tab] = horizontal.areas(area);
+        let [app_name, list_tab, calendar_tab, options_tab] = horizontal.areas(area);
 
         Block::new().style(THEME.root).render(area, buf);
-        Paragraph::new("FrogPad").render(app_name, buf);
-        Paragraph::new(" Tasks ")
-            .style(if let Tab::TaskList = self.current_tab {
-                THEME.root_tab_selected
-            } else {
-                THEME.root
-            })
+        Span::raw("FrogPad").render(app_name, buf);
+        Span::raw(" Tasks ")
+            .style(self.get_style(Tab::TaskList))
             .render(list_tab, buf);
-        Paragraph::new(" Calendar ")
-            .style(if let Tab::Calendar = self.current_tab {
-                THEME.root_tab_selected
-            } else {
-                THEME.root
-            })
+        Span::raw(" Calendar ")
+            .style(self.get_style(Tab::Calendar))
             .render(calendar_tab, buf);
-        Paragraph::new(" Options ")
-            .style(if let Tab::Options = self.current_tab {
-                THEME.root_tab_selected
-            } else {
-                THEME.root
-            })
+        Span::raw(" Options ")
+            .style(self.get_style(Tab::Options))
             .render(options_tab, buf);
-        Paragraph::new(" Profile ")
-            .style(if let Tab::Profile = self.current_tab {
-                THEME.root_tab_selected
-            } else {
-                THEME.root
-            })
-            .render(profile_tab, buf);
+    }
+
+    fn get_style(&self, tab: Tab) -> Style {
+        if tab == self.current_tab {
+            THEME.root_tab_selected
+        } else {
+            THEME.root
+        }
     }
 
     /*
@@ -363,9 +331,6 @@ fn main() -> io::Result<()> {
         frames_since_error: None,
         task_lists: Vec::new(),
         task_lists_backup: Vec::new(),
-        profile: UserProfile {
-            name: "Thomas".to_string(),
-        },
         options: Options {
             delete_on_completion: false,
             error_display_time: 2,
@@ -390,7 +355,6 @@ fn main() -> io::Result<()> {
         },
         calendar_tab: CalendarTab::default(),
         options_tab: OptionsTab {},
-        profile_tab: ProfileTab {},
         save_window: ConfirmationPopup::new(
             "Confirm Save".to_string(),
             "There is unsaved work. Save and Quit?".to_string(),

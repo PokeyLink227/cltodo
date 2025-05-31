@@ -1,8 +1,6 @@
-use chrono::{Datelike, Weekday};
-use ratatui::{layout::Offset, prelude::*, widgets::*};
-//use crossterm::event::{KeyCode};
 use crate::theme::THEME;
-use itertools::Itertools;
+use chrono::{Datelike, Weekday};
+use ratatui::{layout::Offset, prelude::*};
 
 pub struct TextEntry {
     text: String,
@@ -112,17 +110,15 @@ impl TextEntry {
     }
 }
 
+static DAYS: [&'static str; 7] = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
 #[derive(Default)]
 pub struct Calendar {}
 
 impl Calendar {
     pub fn render(&self, area: Rect, buf: &mut Buffer) {
-        let days = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-
-        let start = 1;
-
         Line::from(
-            days.iter()
+            DAYS.iter()
                 .map(|day| Span::from(format!("{} ", day)))
                 .collect::<Vec<Span>>(),
         )

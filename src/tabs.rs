@@ -1,17 +1,9 @@
-use crate::{
-    CommandRequest,
-    popup::{
-        ConfirmationField, ConfirmationPopup, PopupStatus, TaskEditorPopup, TaskSource,
-        TextEntryPopup,
-    },
-    theme::THEME,
-    widgets::Calendar,
-};
-use chrono::{Datelike, NaiveDate, Weekday};
+use crate::{CommandRequest, popup::*, theme::THEME, widgets::Calendar};
+use chrono::{Datelike, NaiveDate};
 use crossterm::event::KeyCode;
 use ratatui::{layout::Offset, prelude::*, widgets::*};
 use serde::{Deserialize, Serialize};
-use std::{cmp::Ordering, fs::File, io::prelude::*, str::Split};
+use std::{fs::File, io::prelude::*, str::Split};
 
 #[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
 pub struct Duration {
@@ -606,7 +598,7 @@ impl TaskListTab {
                 ]);
 
                 for (sub_index, sub_task) in task.sub_tasks.iter().enumerate() {
-                    let [tree_area, mark_area, desc_area, date_area, duration_area] =
+                    let [tree_area, mark_area, desc_area, _date_area, _duration_area] =
                         horizontal.areas(tasks_inner_area);
                     let style = if index == selected_list.selected
                         && self.selected_sub_task == sub_index + 1
@@ -662,7 +654,7 @@ impl TaskListTab {
         let task = &selected_list.tasks[selected_list.selected];
         let vertical =
             Layout::vertical([1, 1, task.name.len() as u16 / inner_area.width + 1, 1, 1]);
-        let [status, name, desc, date, duration] = vertical.areas(inner_area);
+        let [status, _name, desc, date, duration] = vertical.areas(inner_area);
 
         Span::from(format!("Status: {}", task.status.get_name())).render(status, buf);
 
@@ -743,22 +735,5 @@ impl OptionsTab {
         .style(THEME.task)
         .block(border)
         .render(area, buf);
-    }
-}
-
-#[derive(Debug)]
-pub struct UserProfile {
-    pub name: String,
-}
-
-pub struct ProfileTab {}
-
-impl ProfileTab {
-    pub fn handle_input(&mut self, key: KeyCode) -> bool {
-        false
-    }
-
-    pub fn render(&self, area: Rect, buf: &mut Buffer, profile: &UserProfile) {
-        Paragraph::new(format!("current_profile: {:?}", profile)).render(area, buf);
     }
 }
